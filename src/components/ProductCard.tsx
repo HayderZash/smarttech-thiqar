@@ -1,0 +1,92 @@
+import { Link } from "@tanstack/react-router";
+
+import { Badge } from "@/components/ui/badge";
+import { localized, useLang } from "@/lib/i18n";
+import { discountPercent, effectivePrice, formatIQD } from "@/lib/format";
+import type { Product } from "@/lib/queries";
+import { cn } from "@/lib/utils";
+
+export function StockBadge({ qty, className }: { qty: number; className?: string }) {
+  const { t } = useLang();
+  if (qty <= 0)
+    return (
+      <Badge variant="destructive" className={cn("rounded-full", className)}>
+        {t("outOfStock")}
+      </Badge>
+    );
+  if (qty <= 2)
+    return (
+      <Badge
+        className={cn("rounded-full bg-warning text-warning-foreground hover:bg-warning", className)}
+      >
+        {t("lastTwo")}
+      </Badge>
+    );
+  return (
+    <Badge
+      className={cn("rounded-full bg-primary-soft text-accent-foreground hover:bg-primary-soft", className)}
+    >
+      {t("inStock")}
+    </Badge>
+  );
+}
+
+export function ProductCard({ product }: { product: Product }) {
+  const { lang } = useLang();
+  const off = discountPercent(product);
+  const price = effectivePrice(product);
+
+  return (
+    <Link
+      to="/product/$id"
+      params={{ id: product.id }}
+      className="group flex flex-col overflow-hidden rounded-2xl border bg-card shadow-[var(--shadow-card)] transition-transform hover:-translate-y-0.5"
+    >
+      <div className="relative aspect-square overflow-hidden bg-sand">
+        {product.image_url ? (
+          <img
+            src={product.image_url}
+            alt={localized(lang, product.name_ar, product.name_en)}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+            {product.sku || "—"}
+          </div>
+        )}
+        {off > 0 && (
+          <span className="absolute top-2 start-2 rounded-full bg-destructive px-2 py-0.5 text-xs font-bold text-destructive-foreground">
+            -{off}%
+          </span>
+        )}
+        <StockBadge qty={product.stock_qty} className="absolute bottom-2 start-2 text-[10px]" />
+      </div>
+      <div className="flex flex-1 flex-col gap-1 p-3">
+        <h3 className="line-clamp-2 text-sm font-semibold leading-snug">
+          {localized(lang, product.name_ar, product.name_en)}
+        </h3>
+        <div className="mt-auto flex flex-wrap items-baseline gap-2">
+          <span className="text-base font-bold text-primary">{formatIQD(price, lang)}</span>
+          {off > 0 && (
+            <span className="text-xs text-muted-foreground line-through">
+              {formatIQD(product.price, lang)}
+            </span>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+export function ProductCardSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-2xl border bg-card">
+      <div className="aspect-square animate-pulse bg-muted" />
+      <div className="space-y-2 p-3">
+        <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
+        <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+      </div>
+    </div>
+  );
+}
