@@ -69,8 +69,11 @@ function CartPage() {
     );
   }
 
-  const onApplyCoupon = async () => {
-    if (!user) return toast.error(t("loginRequired"));
+  const onApplyCoupon = async (): Promise<void> => {
+    if (!user) {
+      toast.error(t("loginRequired"));
+      return;
+    }
     try {
       const res = await checkCoupon({ data: { code: coupon, subtotal } });
       if (res.valid) {
@@ -85,14 +88,21 @@ function CartPage() {
     }
   };
 
-  const onCheckout = async () => {
+  const onCheckout = async (): Promise<void> => {
     if (!user) {
       toast.error(t("loginRequired"));
       void navigate({ to: "/account" });
       return;
     }
-    if (!govId) return toast.error(t("governorate"));
-    if (landmark.trim().length < 2) return toast.error(t("landmark"));
+    if (!govId) {
+      toast.error(t("governorate"));
+      return;
+    }
+    if (landmark.trim().length < 2) {
+      toast.error(t("landmark"));
+      return;
+    }
+
     setBusy(true);
     try {
       const res = await submit({
