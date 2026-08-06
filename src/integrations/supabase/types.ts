@@ -14,16 +14,366 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      banners: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          is_active: boolean
+          link_url: string | null
+          sort_order: number
+          title_ar: string
+          title_en: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          link_url?: string | null
+          sort_order?: number
+          title_ar?: string
+          title_en?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link_url?: string | null
+          sort_order?: number
+          title_ar?: string
+          title_en?: string
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          name_ar: string
+          name_en: string
+          parent_id: string | null
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name_ar: string
+          name_en?: string
+          parent_id?: string | null
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name_ar?: string
+          name_en?: string
+          parent_id?: string | null
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+        }
+        Relationships: []
+      }
+      governorates: {
+        Row: {
+          id: string
+          name_ar: string
+          name_en: string
+          shipping_cost: number
+          sort_order: number
+        }
+        Insert: {
+          id?: string
+          name_ar: string
+          name_en?: string
+          shipping_cost?: number
+          sort_order?: number
+        }
+        Update: {
+          id?: string
+          name_ar?: string
+          name_en?: string
+          shipping_cost?: number
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          id: string
+          order_id: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          unit_price?: number
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          coupon_code: string | null
+          created_at: string
+          customer_id: string | null
+          customer_name: string
+          discount_amount: number
+          governorate_id: string | null
+          governorate_name: string
+          id: string
+          landmark: string
+          notes: string
+          order_number: number
+          phone: string
+          preferred_delivery_time: string
+          shipping_fee: number
+          status: string
+          subtotal: number
+          total_amount: number
+        }
+        Insert: {
+          coupon_code?: string | null
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string
+          discount_amount?: number
+          governorate_id?: string | null
+          governorate_name?: string
+          id?: string
+          landmark?: string
+          notes?: string
+          order_number?: number
+          phone?: string
+          preferred_delivery_time?: string
+          shipping_fee?: number
+          status?: string
+          subtotal?: number
+          total_amount?: number
+        }
+        Update: {
+          coupon_code?: string | null
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string
+          discount_amount?: number
+          governorate_id?: string | null
+          governorate_name?: string
+          id?: string
+          landmark?: string
+          notes?: string
+          order_number?: number
+          phone?: string
+          preferred_delivery_time?: string
+          shipping_fee?: number
+          status?: string
+          subtotal?: number
+          total_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_governorate_id_fkey"
+            columns: ["governorate_id"]
+            isOneToOne: false
+            referencedRelation: "governorates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          catalog_pdf_url: string | null
+          category_id: string | null
+          created_at: string
+          description_ar: string
+          description_en: string
+          discount_price: number | null
+          id: string
+          image_url: string | null
+          is_featured: boolean
+          name_ar: string
+          name_en: string
+          price: number
+          sku: string
+          stock_qty: number
+        }
+        Insert: {
+          catalog_pdf_url?: string | null
+          category_id?: string | null
+          created_at?: string
+          description_ar?: string
+          description_en?: string
+          discount_price?: number | null
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean
+          name_ar: string
+          name_en?: string
+          price?: number
+          sku?: string
+          stock_qty?: number
+        }
+        Update: {
+          catalog_pdf_url?: string | null
+          category_id?: string | null
+          created_at?: string
+          description_ar?: string
+          description_en?: string
+          discount_price?: number | null
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean
+          name_ar?: string
+          name_en?: string
+          price?: number
+          sku?: string
+          stock_qty?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          phone: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string
+          id: string
+          phone?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          phone?: string
+        }
+        Relationships: []
+      }
+      store_settings: {
+        Row: {
+          key: string
+          value: string
+        }
+        Insert: {
+          key: string
+          value?: string
+        }
+        Update: {
+          key?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "customer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +500,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "customer"],
+    },
   },
 } as const
