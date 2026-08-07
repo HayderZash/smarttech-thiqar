@@ -122,6 +122,127 @@ function SearchBox({ className }: { className?: string }) {
   );
 }
 
+function SideMenu({
+  settings,
+  storeName,
+  isAdmin,
+  pathname,
+}: {
+  settings: Record<string, string> | undefined;
+  storeName: string;
+  isAdmin: boolean;
+  pathname: string;
+}) {
+  const { t, lang } = useLang();
+  const [open, setOpen] = useState(false);
+  const about = lang === "ar" ? settings?.["store_about_ar"] : settings?.["store_about_en"];
+
+  const contacts = [
+    { icon: Phone, value: settings?.["store_phone"], href: `tel:${settings?.["store_phone"]}` },
+    {
+      icon: MessageCircle,
+      value: settings?.["support_whatsapp"],
+      href: settings?.["support_whatsapp"] ? whatsappLink(settings["support_whatsapp"], "") : undefined,
+    },
+    { icon: Mail, value: settings?.["store_email"], href: `mailto:${settings?.["store_email"]}` },
+    { icon: MapPin, value: settings?.["store_address"] },
+    { icon: Clock, value: settings?.["working_hours"] },
+  ].filter((c) => c.value);
+
+  const socials = [
+    { icon: Facebook, href: settings?.["facebook_url"], label: "Facebook" },
+    { icon: Instagram, href: settings?.["instagram_url"], label: "Instagram" },
+  ].filter((s) => s.href);
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="shrink-0 rounded-full" aria-label={t("searchTitle")}>
+          <Menu className="size-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side={lang === "ar" ? "right" : "left"} className="w-80 overflow-y-auto p-0">
+        <SheetHeader className="border-b p-4 text-start">
+          <SheetTitle className="text-base">{storeName}</SheetTitle>
+          <SheetDescription className="text-xs">
+            {about || (lang === "ar" ? "متجرك للإلكترونيات والطاقة ومواد البناء" : "Electronics, solar and building supplies")}
+          </SheetDescription>
+        </SheetHeader>
+
+        <nav className="space-y-1 p-3">
+          {NAV.map(({ to, key, icon: Icon }) => (
+            <Link
+              key={to}
+              to={to}
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-sand hover:text-foreground",
+                pathname === to && "bg-primary-soft text-accent-foreground",
+              )}
+            >
+              <Icon className="size-4 shrink-0" />
+              {t(key)}
+            </Link>
+          ))}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-sand hover:text-foreground",
+                pathname === "/admin" && "bg-primary-soft text-accent-foreground",
+              )}
+            >
+              <Shield className="size-4 shrink-0" />
+              {t("admin")}
+            </Link>
+          )}
+        </nav>
+
+        {contacts.length > 0 && (
+          <div className="space-y-2 border-t p-4">
+            <h3 className="text-xs font-semibold text-muted-foreground">
+              {lang === "ar" ? "تفاصيل التواصل" : "Contact details"}
+            </h3>
+            {contacts.map((c, i) => {
+              const Row = (
+                <span className="flex items-center gap-3 text-sm">
+                  <c.icon className="size-4 shrink-0 text-primary" />
+                  <span className="min-w-0 break-words">{c.value}</span>
+                </span>
+              );
+              return c.href ? (
+                <a key={i} href={c.href} target="_blank" rel="noopener noreferrer" className="block hover:text-primary">
+                  {Row}
+                </a>
+              ) : (
+                <div key={i}>{Row}</div>
+              );
+            })}
+          </div>
+        )}
+
+        {socials.length > 0 && (
+          <div className="flex gap-2 border-t p-4">
+            {socials.map((s) => (
+              <a
+                key={s.label}
+                href={s.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={s.label}
+                className="flex size-10 items-center justify-center rounded-xl border text-muted-foreground hover:text-primary"
+              >
+                <s.icon className="size-4" />
+              </a>
+            ))}
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { t, lang, setLang } = useLang();
   const { count } = useCart();
@@ -129,12 +250,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { data: settings } = useQuery(settingsQuery);
   const support = settings?.["support_whatsapp"];
-  const storeName = lang === "ar" ? settings?.["store_name_ar"] : settings?.["store_name_en"];
+  const storeName = (lang === "ar" ? settings?.["store_name_ar"] : settings?.["store_name_en"]) || "SmartTech";
 
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20 md:pb-0">
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-3 px-4">
+          <SideMenu settings={settings} storeName={storeName} isAdmin={isAdmin} pathname={pathname} />
+
           <Link to="/" className="flex shrink-0 items-center gap-2">
             {settings?.["logo_url"] ? (
               <img src={settings["logo_url"]} alt="" className="size-9 rounded-xl object-cover" />
