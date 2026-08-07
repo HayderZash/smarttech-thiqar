@@ -57,6 +57,13 @@ function CartPage() {
   const shipping = Number(gov?.shipping_cost ?? 0);
   const total = Math.max(0, subtotal - discount) + shipping;
 
+  useEffect(() => {
+    if (profile) {
+      setFullName((n) => n || profile.full_name);
+      setPhone((p) => p || profile.phone);
+    }
+  }, [profile]);
+
   if (items.length === 0) {
     return (
       <div className="py-20 text-center">
