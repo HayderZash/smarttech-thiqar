@@ -101,7 +101,7 @@ function ProductPage() {
                 <img
                   src={gallery[active]}
                   alt={name}
-                  className="absolute start-1/2 top-[46%] h-[185%] w-[185%] max-w-none -translate-x-1/2 -translate-y-1/2 object-cover rtl:translate-x-1/2"
+                  className="absolute start-1/2 top-[46%] h-[160%] w-[160%] max-w-none -translate-x-1/2 -translate-y-1/2 object-cover rtl:translate-x-1/2"
                 />
 
               ) : (
