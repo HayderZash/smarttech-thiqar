@@ -206,10 +206,19 @@ const emptySolar = {
   kind: "panel",
   name_ar: "",
   name_en: "",
+  brand: "",
+  tier: "mid",
   capacity: 0,
   voltage: 51.2,
   price: 0,
 };
+
+const TIER_LABEL: Record<string, string> = {
+  economy: "اقتصادي",
+  mid: "متوسط",
+  pro: "احترافي",
+};
+
 
 
 function AdminPage() {
