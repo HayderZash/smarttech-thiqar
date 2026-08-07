@@ -93,7 +93,7 @@ function TrackPage() {
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">{t("status") || "Status"}</span>
+            <span className="text-muted-foreground">{lang === "ar" ? "الحالة" : "Status"}</span>
             <span className="font-semibold text-primary">{statusLabel(result.status, lang)}</span>
           </div>
           <div className="flex justify-between">
@@ -101,7 +101,7 @@ function TrackPage() {
             <span className="font-bold">{formatIQD(Number(result.total_amount), lang)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">{t("date") || ""}</span>
+            <span className="text-muted-foreground">{lang === "ar" ? "التاريخ" : "Date"}</span>
             <span>
               {new Date(result.created_at).toLocaleString(
                 lang === "ar" ? "ar-IQ-u-nu-latn" : "en-GB",
