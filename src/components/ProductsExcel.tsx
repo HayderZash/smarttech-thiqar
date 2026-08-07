@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+
 import { supabase } from "@/integrations/supabase/client";
 
 type Category = { id: string; name_ar: string; name_en: string };
