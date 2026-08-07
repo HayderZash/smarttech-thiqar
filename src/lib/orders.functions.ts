@@ -80,14 +80,18 @@ export const placeOrder = createServerFn({ method: "POST" })
     if (prodErr) throw new Error(prodErr.message);
     if (!products?.length) throw new Error("No valid products in the order");
 
+    const markup = await getMarkup(supabase);
+
     const lines = data.items
       .map((line) => {
         const p = products.find((x) => x.id === line.product_id);
         if (!p) return null;
-        const unit =
+        const base =
           p.discount_price != null && Number(p.discount_price) > 0 && Number(p.discount_price) < Number(p.price)
             ? Number(p.discount_price)
             : Number(p.price);
+        const unit = applyMarkup(base, markup);
+
         return {
           product_id: p.id,
           product_name: p.name_ar || p.name_en,
