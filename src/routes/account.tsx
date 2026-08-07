@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { LogOut } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ChevronLeft, LogOut, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -179,10 +179,18 @@ function AccountPage() {
         {t("welcome")}، {profile?.full_name}
       </h1>
       {isAdmin && (
-        <p className="rounded-xl bg-primary-soft px-3 py-2 text-sm font-semibold text-accent-foreground">
-          {t("admin")}
-        </p>
+        <Link
+          to="/admin"
+          className="flex items-center justify-between rounded-2xl border bg-primary-soft px-4 py-3 text-sm font-semibold text-accent-foreground"
+        >
+          <span className="flex items-center gap-2">
+            <Shield className="size-4" />
+            {t("admin")}
+          </span>
+          <ChevronLeft className="size-4 rtl:rotate-180" />
+        </Link>
       )}
+
       <div className="space-y-4 rounded-2xl border bg-card p-4">
         <h2 className="text-base font-semibold">{t("editProfile")}</h2>
         <div className="space-y-2">

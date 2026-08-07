@@ -221,7 +221,20 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             );
           })}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className={cn(
+                "flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium text-muted-foreground",
+                pathname === "/admin" && "text-primary",
+              )}
+            >
+              <Shield className={cn("size-5", pathname === "/admin" && "stroke-[2.4]")} />
+              {t("admin")}
+            </Link>
+          )}
         </div>
+
       </nav>
     </div>
   );
