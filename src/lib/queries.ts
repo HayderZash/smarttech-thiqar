@@ -1,6 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
+import { applyMarkup } from "@/lib/format";
+
 
 export type Product = {
   id: string;
