@@ -122,25 +122,85 @@ function SolarPage() {
     return Math.max(1, Math.ceil((peakW * 1.3) / 1000 / (c.capacity || 1)) || 1);
   };
 
+  const tiers = (["economy", "mid", "pro"] as const).filter((tr) =>
+    all.some((c) => c.tier === tr),
+  );
+  const activeTier = tiers.includes(tier) ? tier : tiers[0];
+
   const groups = (["panel", "battery", "inverter"] as const).map((kind) => {
     const items = all
-      .filter((c) => c.kind === kind)
+      .filter((c) => c.kind === kind && c.tier === activeTier)
       .map((c) => {
         const qty = qtyFor(c);
         return { c, qty, cost: qty * Number(c.price) };
       })
       .sort((a, b) => a.cost - b.cost);
-    const selected = items.find((i) => i.c.id === picked[kind]) ?? items[0];
+    const selected = items.find((i) => i.c.id === picked[`${activeTier}:${kind}`]) ?? items[0];
     return { kind, items, selected };
   });
 
   const total = groups.reduce((s, g) => s + (g.selected?.cost ?? 0), 0);
-  const hasCatalog = groups.some((g) => g.items.length > 0);
+  const hasCatalog = all.length > 0;
   const groupLabel: Record<string, string> = {
     panel: t("panelsGroup"),
     battery: t("batteriesGroup"),
     inverter: t("invertersGroup"),
   };
+  const tierLabel: Record<string, string> = {
+    economy: t("packageEconomy"),
+    mid: t("packageMid"),
+    pro: t("packagePro"),
+  };
+
+  const tierTotal = (tr: string) =>
+    (["panel", "battery", "inverter"] as const).reduce((sum, kind) => {
+      const best = all
+        .filter((c) => c.kind === kind && c.tier === tr)
+        .map((c) => qtyFor(c) * Number(c.price))
+        .sort((a, b) => a - b)[0];
+      return sum + (best ?? 0);
+    }, 0);
+
+  const printQuote = () => {
+    const rows = groups
+      .filter((g) => g.selected)
+      .map((g) => {
+        const s = g.selected!;
+        const name = [localized(lang, s.c.name_ar, s.c.name_en), s.c.brand].filter(Boolean).join(" — ");
+        return `<tr><td>${groupLabel[g.kind]}</td><td>${name}</td><td dir="ltr">${s.qty}</td><td dir="ltr">${formatIQD(
+          Number(s.c.price),
+          lang,
+        )}</td><td dir="ltr">${formatIQD(s.cost, lang)}</td></tr>`;
+      })
+      .join("");
+    const html = `<!doctype html><html dir="${ar ? "rtl" : "ltr"}" lang="${lang}"><head><meta charset="utf-8">
+<title>${t("quoteTitle")} - SmartTech</title><style>
+body{font-family:system-ui,'Segoe UI',Tahoma,sans-serif;padding:28px;color:#14281d}
+h1{font-size:20px;margin:0 0 4px}p{margin:2px 0;font-size:12px;color:#5b6b60}
+table{width:100%;border-collapse:collapse;margin-top:18px;font-size:13px}
+th,td{border:1px solid #cfe0d4;padding:8px;text-align:${ar ? "right" : "left"}}
+th{background:#eaf3ec}tfoot td{font-weight:800;background:#f6f2e8}
+</style></head><body>
+<h1>${t("quoteTitle")} — SmartTech</h1>
+<p>${t("quoteDate")}: ${new Date().toLocaleDateString("en-GB")}</p>
+<p>${tierLabel[activeTier ?? "mid"] ?? ""} · ${t("dailyEnergy")}: ${(dailyWh / 1000).toFixed(2)} kWh · ${t(
+      "peakLoad",
+    )}: ${(peakW / 1000).toFixed(2)} kW</p>
+<table><thead><tr><th>${groupLabel["panel"] ? "" : ""}${t("itemName")}</th><th>${t(
+      "brandLabel",
+    )}</th><th>${t("qtyNeeded")}</th><th>${t("unitPriceLabel")}</th><th>${t(
+      "lineTotal",
+    )}</th></tr></thead><tbody>${rows}</tbody>
+<tfoot><tr><td colspan="4">${t("totalCost")}</td><td dir="ltr">${formatIQD(total, lang)}</td></tr></tfoot></table>
+</body></html>`;
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 300);
+  };
+
 
   return (
     <div className="mx-auto max-w-3xl pb-6">
