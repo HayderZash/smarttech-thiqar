@@ -461,12 +461,14 @@ export const addOrderItem = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!product) throw new Error("Product not found");
 
-    const unit =
+    const baseUnit =
       product.discount_price != null &&
       Number(product.discount_price) > 0 &&
       Number(product.discount_price) < Number(product.price)
         ? Number(product.discount_price)
         : Number(product.price);
+    const unit = applyMarkup(baseUnit, await getMarkup(supabase));
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
