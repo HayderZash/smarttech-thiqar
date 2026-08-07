@@ -71,7 +71,9 @@ function SearchPage() {
   const subCats = activeCat ? allCats.filter((c) => c.parent_id === activeCat.id) : [];
 
   const uncategorized = category === "none";
+  const generalLabel = lang === "ar" ? "العام" : "General";
   const catIds =
+
     category === "all" || uncategorized
       ? null
       : [category, ...allCats.filter((c) => c.parent_id === category).map((c) => c.id)];
