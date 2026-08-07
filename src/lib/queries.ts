@@ -36,6 +36,7 @@ export type Category = {
   name_ar: string;
   name_en: string;
   image_url: string | null;
+  icon: string;
   parent_id: string | null;
   sort_order: number;
 };
