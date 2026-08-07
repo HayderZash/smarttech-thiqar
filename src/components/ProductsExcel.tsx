@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+
 import { supabase } from "@/integrations/supabase/client";
 
 type Category = { id: string; name_ar: string; name_en: string };
@@ -88,7 +90,11 @@ export function ProductsExcel({
   onDone: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<{ phase: string; done: number; total: number } | null>(
+    null,
+  );
   const inputRef = useRef<HTMLInputElement>(null);
+
 
   const exportTemplate = () => {
     const example = {
@@ -139,9 +145,11 @@ export function ProductsExcel({
 
   const handleFile = async (file: File) => {
     setBusy(true);
+    setProgress({ phase: "قراءة الملف…", done: 0, total: 0 });
     try {
       const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
       const sheetName = wb.SheetNames.find((n) => n.toLowerCase() === "products") ?? wb.SheetNames[0]!;
+      setProgress({ phase: "تحليل الصفوف…", done: 0, total: 0 });
       const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[sheetName]!, {
         defval: "",
       });
@@ -190,13 +198,26 @@ export function ProductsExcel({
         return;
       }
 
+      const total = inserts.length + updates.length;
+      let done = 0;
+      const tick = (n: number, phase: string) => {
+        done += n;
+        setProgress({ phase, done, total });
+      };
+
+      setProgress({ phase: "رفع المنتجات الجديدة…", done: 0, total });
       for (let i = 0; i < inserts.length; i += 200) {
-        const { error } = await supabase.from("products").insert(inserts.slice(i, i + 200) as never);
+        const chunk = inserts.slice(i, i + 200);
+        const { error } = await supabase.from("products").insert(chunk as never);
         if (error) throw error;
+        tick(chunk.length, "رفع المنتجات الجديدة…");
+        // Yield so the progress bar can repaint between chunks.
+        await new Promise((r) => setTimeout(r, 0));
       }
       for (const u of updates) {
         const { error } = await supabase.from("products").update(u.values as never).eq("id", u.id);
         if (error) throw error;
+        tick(1, "تحديث المنتجات الموجودة…");
       }
 
       toast.success(
@@ -207,9 +228,11 @@ export function ProductsExcel({
       toast.error(e instanceof Error ? e.message : "فشل استيراد الملف");
     } finally {
       setBusy(false);
+      setProgress(null);
       if (inputRef.current) inputRef.current.value = "";
     }
   };
+
 
   return (
     <div className="space-y-3 rounded-2xl border bg-card p-4">
@@ -228,14 +251,15 @@ export function ProductsExcel({
           تصدير المنتجات الحالية
         </Button>
         <Button type="button" disabled={busy} asChild>
-          <label className="cursor-pointer">
+          <label className={busy ? "pointer-events-none opacity-70" : "cursor-pointer"}>
             {busy ? <Loader2 className="size-4 animate-spin" /> : <FileSpreadsheet className="size-4" />}
-            رفع ملف Excel
+            {busy ? "جارٍ الرفع…" : "رفع ملف Excel"}
             <input
               ref={inputRef}
               type="file"
               accept=".xlsx,.xls,.csv"
               className="hidden"
+              disabled={busy}
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 if (f) void handleFile(f);
@@ -244,6 +268,23 @@ export function ProductsExcel({
           </label>
         </Button>
       </div>
+      {progress && (
+        <div className="space-y-2 rounded-xl border bg-muted/40 p-3">
+          <div className="flex items-center justify-between text-xs font-semibold">
+            <span>{progress.phase}</span>
+            <span dir="ltr">
+              {progress.total
+                ? `${progress.done} / ${progress.total} (${Math.round((progress.done / progress.total) * 100)}%)`
+                : "…"}
+            </span>
+          </div>
+          <Progress value={progress.total ? (progress.done / progress.total) * 100 : undefined} />
+          <p className="text-[11px] text-muted-foreground">
+            لا تغلق الصفحة حتى انتهاء الرفع — الملفات الكبيرة قد تستغرق عدة دقائق.
+          </p>
+        </div>
+      )}
+
     </div>
   );
 }

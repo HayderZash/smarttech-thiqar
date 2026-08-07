@@ -6,7 +6,9 @@ import {
   Image as ImageIcon,
   LayoutGrid,
   Package,
+  Pencil,
   Plus,
+
   Search,
   Settings,
   Star,
@@ -53,7 +55,9 @@ import {
   productsQuery,
   settingsQuery,
   stockAlertsQuery,
+  type Product,
 } from "@/lib/queries";
+
 
 
 export const Route = createFileRoute("/admin")({
@@ -339,6 +343,7 @@ function AdminPage() {
     link_url: "",
   });
   const [prodPage, setProdPage] = useState(1);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [couponForm, setCouponForm] = useState({ code: "", discount_type: "fixed", discount_value: 0 });
   const [solarForm, setSolarForm] = useState({ ...emptySolar });
   const [store, setStore] = useState<Record<string, string>>({});
@@ -359,7 +364,7 @@ function AdminPage() {
   const saveProduct = useMutation({
     mutationFn: async () => {
       const { images_text, deal_ends_at, ...rest } = pform;
-      const { error } = await supabase.from("products").insert({
+      const values = {
         ...rest,
         category_id: pform.category_id || null,
         discount_price: pform.discount_price || null,
@@ -368,16 +373,43 @@ function AdminPage() {
           .map((u) => u.trim())
           .filter(Boolean),
         deal_ends_at: deal_ends_at ? new Date(deal_ends_at).toISOString() : null,
-      });
+      };
+      const { error } = editingId
+        ? await supabase.from("products").update(values).eq("id", editingId)
+        : await supabase.from("products").insert(values);
       if (error) throw error;
     },
     onSuccess: () => {
+      const wasEditing = !!editingId;
       setPform({ ...emptyProduct });
+      setEditingId(null);
       invalidate(["products"]);
-      toast.success("تمت الإضافة");
+      toast.success(wasEditing ? "تم حفظ التعديلات" : "تمت الإضافة");
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const startEdit = (p: Product) => {
+    setEditingId(p.id);
+    setPform({
+      sku: p.sku ?? "",
+      name_ar: p.name_ar ?? "",
+      name_en: p.name_en ?? "",
+      description_ar: p.description_ar ?? "",
+      description_en: p.description_en ?? "",
+      price: Number(p.price) || 0,
+      discount_price: p.discount_price === null ? null : Number(p.discount_price),
+      category_id: p.category_id ?? null,
+      image_url: p.image_url ?? "",
+      catalog_pdf_url: p.catalog_pdf_url ?? "",
+      stock_qty: Number(p.stock_qty) || 0,
+      is_featured: !!p.is_featured,
+      images_text: (p.images ?? []).join("\n"),
+      deal_ends_at: p.deal_ends_at ? new Date(p.deal_ends_at).toISOString().slice(0, 16) : "",
+    });
+    document.getElementById("product-new")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
 
   if (loading) return <div className="h-64 animate-pulse rounded-2xl bg-muted" />;
   if (!isAdmin) {
@@ -732,7 +764,12 @@ function AdminPage() {
             products={(products.data ?? []) as never}
             onDone={() => invalidate(["products"])}
           />
-          <Panel id="product-new" title="إضافة منتج" desc="أدخل بيانات المنتج الجديد">
+          <Panel
+            id="product-new"
+            title={editingId ? "تعديل منتج" : "إضافة منتج"}
+            desc={editingId ? "عدّل بيانات المنتج ثم احفظ" : "أدخل بيانات المنتج الجديد"}
+          >
+
           <div className="grid gap-4 sm:grid-cols-2">
 
             <div className="space-y-2">
@@ -842,13 +879,28 @@ function AdminPage() {
               value={pform.catalog_pdf_url}
               onChange={(url) => setPform({ ...pform, catalog_pdf_url: url })}
             />
-            <Button
-              className="sm:col-span-2"
-              disabled={saveProduct.isPending || !pform.name_ar}
-              onClick={() => saveProduct.mutate()}
-            >
-              <Plus className="size-4" /> إضافة المنتج
-            </Button>
+            <div className="flex gap-2 sm:col-span-2">
+              <Button
+                className="flex-1"
+                disabled={saveProduct.isPending || !pform.name_ar}
+                onClick={() => saveProduct.mutate()}
+              >
+                {editingId ? <Pencil className="size-4" /> : <Plus className="size-4" />}
+                {editingId ? "حفظ التعديلات" : "إضافة المنتج"}
+              </Button>
+              {editingId && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEditingId(null);
+                    setPform({ ...emptyProduct });
+                  }}
+                >
+                  إلغاء
+                </Button>
+              )}
+            </div>
+
           </div>
           </Panel>
 
@@ -919,6 +971,15 @@ function AdminPage() {
                   }}
                 />
                 <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="edit"
+                  onClick={() => startEdit(p)}
+                >
+                  <Pencil className="size-4" />
+                </Button>
+                <Button
+
                   variant="ghost"
                   size="icon"
                   className="text-destructive"
