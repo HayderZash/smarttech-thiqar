@@ -364,6 +364,7 @@ function AdminPage() {
     { value: "shipping", label: "المحافظات", desc: "أجور التوصيل لكل محافظة", icon: Truck },
     { value: "banners", label: "البانرات", desc: "صور الواجهة الرئيسية", icon: ImageIcon },
     { value: "coupons", label: "الكوبونات", desc: "أكواد الخصم", icon: Ticket },
+    { value: "solar", label: "الطاقة الشمسية", desc: "الألواح والبطاريات والإنفرترات وأسعارها", icon: Sun },
     { value: "reviews", label: "التقييمات", desc: "اعتماد تقييمات الزبائن وطلبات الإشعار", icon: Star },
     { value: "settings", label: "الإعدادات", desc: "معلومات المتجر والتواصل", icon: Settings },
   ];
