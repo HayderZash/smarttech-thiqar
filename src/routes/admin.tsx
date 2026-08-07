@@ -568,9 +568,10 @@ function AdminPage() {
               <Plus className="size-4" /> إضافة المنتج
             </Button>
           </div>
+          </Panel>
 
           {lowStock.length > 0 && (
-            <div className="rounded-2xl border border-warning bg-warning/10 p-3 text-sm">
+            <div className="rounded-2xl border border-warning bg-warning/10 p-4 text-sm">
               <p className="font-semibold">تنبيه انخفاض المخزون:</p>
               {lowStock.map((p) => (
                 <span key={p.id} className="me-2">
@@ -580,8 +581,10 @@ function AdminPage() {
             </div>
           )}
 
-          <div className="space-y-2">
-            {(products.data ?? []).map((p) => (
+          <Panel id="product-list" title={`قائمة المنتجات (${visibleProducts.length})`} desc="تعديل المخزون أو الحذف">
+          <div className="space-y-3">
+            {visibleProducts.map((p) => (
+
               <div key={p.id} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
                 <div className="size-12 shrink-0 overflow-hidden rounded-xl bg-sand">
                   {p.image_url && <img src={p.image_url} alt="" className="h-full w-full object-cover" />}
