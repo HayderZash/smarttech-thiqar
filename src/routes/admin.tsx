@@ -121,6 +121,58 @@ function FileField({
   );
 }
 
+/** Collapsible admin card whose open/closed state survives reloads. */
+function Panel({
+  id,
+  title,
+  desc,
+  action,
+  children,
+  defaultOpen = true,
+}: {
+  id: string;
+  title: string;
+  desc?: string;
+  action?: ReactNode;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(`admin_panel_${id}`);
+    if (stored === "0" || stored === "1") setOpen(stored === "1");
+  }, [id]);
+
+  return (
+    <Collapsible
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        localStorage.setItem(`admin_panel_${id}`, v ? "1" : "0");
+      }}
+      className="rounded-2xl border bg-card"
+    >
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4">
+        <CollapsibleTrigger className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-start">
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-bold">{title}</span>
+            {desc && <span className="block truncate text-xs text-muted-foreground">{desc}</span>}
+          </span>
+          <ChevronDown
+            className={cn("size-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
+          />
+        </CollapsibleTrigger>
+        {action}
+      </div>
+      <CollapsibleContent>
+        <div className="border-t p-4">{children}</div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+
 const emptyProduct = {
   sku: "",
   name_ar: "",
