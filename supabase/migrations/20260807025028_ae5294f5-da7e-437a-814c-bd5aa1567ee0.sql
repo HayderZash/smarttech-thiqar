@@ -1,0 +1,3 @@
+ALTER TABLE public.solar_components
+  ADD COLUMN IF NOT EXISTS brand text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS tier text NOT NULL DEFAULT 'mid';

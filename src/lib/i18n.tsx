@@ -183,6 +183,19 @@ const dict = {
     ar: "لم تتم إضافة مكوّنات للمنظومة بعد.",
     en: "No system components have been added yet.",
   },
+  packages: { ar: "عروض المنظومة", en: "System packages" },
+  packageEconomy: { ar: "العرض الاقتصادي", en: "Economy package" },
+  packagePro: { ar: "العرض الاحترافي", en: "Professional package" },
+  packageMid: { ar: "العرض المتوسط", en: "Standard package" },
+  packageEmpty: { ar: "لا توجد مكوّنات لهذا العرض", en: "No components for this package" },
+  brandLabel: { ar: "البراند", en: "Brand" },
+  exportQuote: { ar: "تصدير / طباعة عرض السعر PDF", en: "Export / print quote (PDF)" },
+  quoteTitle: { ar: "عرض سعر منظومة طاقة شمسية", en: "Solar system quotation" },
+  quoteDate: { ar: "التاريخ", en: "Date" },
+  itemName: { ar: "المكوّن", en: "Item" },
+  unitPriceLabel: { ar: "سعر الوحدة", en: "Unit price" },
+  lineTotal: { ar: "الإجمالي", en: "Total" },
+
 
   // misc
   currency: { ar: "د.ع", en: "IQD" },

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, RotateCcw, Settings2, Sun, Trash2 } from "lucide-react";
+import { FileDown, Plus, RotateCcw, Settings2, Sun, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { NumberField } from "@/components/NumberField";
@@ -82,6 +82,7 @@ function SolarPage() {
   const [inverterMode, setInverterMode] = useState<"auto" | "manual">("auto");
   const [inverterManual, setInverterManual] = useState(5);
 
+  const [tier, setTier] = useState<"economy" | "mid" | "pro">("economy");
   const [picked, setPicked] = useState<Record<string, string>>({});
 
   const update = (id: number, patch: Partial<Device>) =>
@@ -122,25 +123,84 @@ function SolarPage() {
     return Math.max(1, Math.ceil((peakW * 1.3) / 1000 / (c.capacity || 1)) || 1);
   };
 
+  const tiers = (["economy", "mid", "pro"] as const).filter((tr) =>
+    all.some((c) => c.tier === tr),
+  );
+  const activeTier = tiers.includes(tier) ? tier : tiers[0];
+
   const groups = (["panel", "battery", "inverter"] as const).map((kind) => {
     const items = all
-      .filter((c) => c.kind === kind)
+      .filter((c) => c.kind === kind && c.tier === activeTier)
       .map((c) => {
         const qty = qtyFor(c);
         return { c, qty, cost: qty * Number(c.price) };
       })
       .sort((a, b) => a.cost - b.cost);
-    const selected = items.find((i) => i.c.id === picked[kind]) ?? items[0];
+    const selected = items.find((i) => i.c.id === picked[`${activeTier}:${kind}`]) ?? items[0];
     return { kind, items, selected };
   });
 
   const total = groups.reduce((s, g) => s + (g.selected?.cost ?? 0), 0);
-  const hasCatalog = groups.some((g) => g.items.length > 0);
+  const hasCatalog = all.length > 0;
   const groupLabel: Record<string, string> = {
     panel: t("panelsGroup"),
     battery: t("batteriesGroup"),
     inverter: t("invertersGroup"),
   };
+  const tierLabel: Record<string, string> = {
+    economy: t("packageEconomy"),
+    mid: t("packageMid"),
+    pro: t("packagePro"),
+  };
+
+  const tierTotal = (tr: string) =>
+    (["panel", "battery", "inverter"] as const).reduce((sum, kind) => {
+      const best = all
+        .filter((c) => c.kind === kind && c.tier === tr)
+        .map((c) => qtyFor(c) * Number(c.price))
+        .sort((a, b) => a - b)[0];
+      return sum + (best ?? 0);
+    }, 0);
+
+  const printQuote = () => {
+    const rows = groups
+      .filter((g) => g.selected)
+      .map((g) => {
+        const s = g.selected!;
+        const name = [localized(lang, s.c.name_ar, s.c.name_en), s.c.brand].filter(Boolean).join(" — ");
+        return `<tr><td>${groupLabel[g.kind]}</td><td>${name}</td><td dir="ltr">${s.qty}</td><td dir="ltr">${formatIQD(
+          Number(s.c.price),
+          lang,
+        )}</td><td dir="ltr">${formatIQD(s.cost, lang)}</td></tr>`;
+      })
+      .join("");
+    const html = `<!doctype html><html dir="${ar ? "rtl" : "ltr"}" lang="${lang}"><head><meta charset="utf-8">
+<title>${t("quoteTitle")} - SmartTech</title><style>
+body{font-family:system-ui,'Segoe UI',Tahoma,sans-serif;padding:28px;color:#14281d}
+h1{font-size:20px;margin:0 0 4px}p{margin:2px 0;font-size:12px;color:#5b6b60}
+table{width:100%;border-collapse:collapse;margin-top:18px;font-size:13px}
+th,td{border:1px solid #cfe0d4;padding:8px;text-align:${ar ? "right" : "left"}}
+th{background:#eaf3ec}tfoot td{font-weight:800;background:#f6f2e8}
+</style></head><body>
+<h1>${t("quoteTitle")} — SmartTech</h1>
+<p>${t("quoteDate")}: ${new Date().toLocaleDateString("en-GB")}</p>
+<p>${tierLabel[activeTier ?? "mid"] ?? ""} · ${t("dailyEnergy")}: ${(dailyWh / 1000).toFixed(2)} kWh · ${t(
+      "peakLoad",
+    )}: ${(peakW / 1000).toFixed(2)} kW</p>
+<table><thead><tr><th>${localized(lang, "القسم", "Group")}</th><th>${t("itemName")}</th><th>${t(
+      "qtyNeeded",
+    )}</th><th>${t("unitPriceLabel")}</th><th>${t("lineTotal")}</th></tr></thead><tbody>${rows}</tbody>
+<tfoot><tr><td colspan="4">${t("totalCost")}</td><td dir="ltr">${formatIQD(total, lang)}</td></tr></tfoot></table>
+
+</body></html>`;
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 300);
+  };
+
 
   return (
     <div className="mx-auto max-w-3xl pb-6">
@@ -312,17 +372,41 @@ function SolarPage() {
           <p className="py-6 text-center text-sm text-muted-foreground">{t("noSolarComponents")}</p>
         ) : (
           <div className="mt-4 space-y-5">
+            {/* package tabs */}
+            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${tiers.length}, minmax(0,1fr))` }}>
+              {tiers.map((tr) => (
+                <button
+                  key={tr}
+                  type="button"
+                  onClick={() => setTier(tr)}
+                  className={cn(
+                    "rounded-xl border p-3 text-start transition",
+                    activeTier === tr ? "border-primary bg-primary/5" : "hover:bg-muted/50",
+                  )}
+                >
+                  <span className="block text-xs font-bold">{tierLabel[tr]}</span>
+                  <span className="mt-1 block text-sm font-extrabold text-primary">
+                    {formatIQD(tierTotal(tr), lang)}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {groups.every((g) => g.items.length === 0) && (
+              <p className="py-4 text-center text-sm text-muted-foreground">{t("packageEmpty")}</p>
+            )}
+
             {groups.map((g) =>
               g.items.length === 0 ? null : (
                 <div key={g.kind} className="space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground">
-                    {groupLabel[g.kind]}
-                  </p>
+                  <p className="text-xs font-semibold text-muted-foreground">{groupLabel[g.kind]}</p>
                   {g.items.map((i) => (
                     <button
                       key={i.c.id}
                       type="button"
-                      onClick={() => setPicked((p) => ({ ...p, [g.kind]: i.c.id }))}
+                      onClick={() =>
+                        setPicked((p) => ({ ...p, [`${activeTier}:${g.kind}`]: i.c.id }))
+                      }
                       className={cn(
                         "grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border p-3 text-start transition",
                         g.selected?.c.id === i.c.id
@@ -333,6 +417,7 @@ function SolarPage() {
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-semibold">
                           {localized(lang, i.c.name_ar, i.c.name_en)}
+                          {i.c.brand ? ` — ${i.c.brand}` : ""}
                         </span>
                         <span className="block text-[11px] text-muted-foreground" dir="ltr">
                           {formatIQD(Number(i.c.price), lang)} ×{i.qty}
@@ -356,9 +441,15 @@ function SolarPage() {
               <span className="text-sm font-semibold">{t("totalCost")}</span>
               <span className="text-lg font-extrabold text-primary">{formatIQD(total, lang)}</span>
             </div>
+
+            <Button className="w-full rounded-full" onClick={printQuote} disabled={total <= 0}>
+              <FileDown className="size-4" />
+              {t("exportQuote")}
+            </Button>
           </div>
         )}
       </section>
+
 
       <p className="mt-3 text-xs text-muted-foreground">{t("solarNote")}</p>
     </div>
