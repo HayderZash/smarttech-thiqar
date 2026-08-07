@@ -123,13 +123,33 @@ export function myOrdersQuery(userId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, order_items(id, product_name, quantity, unit_price)")
+        .select("*, order_items(id, product_name, quantity, unit_price, is_unavailable)")
+        // Admins can read every order via RLS — this page is "my orders" only.
+        .eq("customer_id", userId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
   });
 }
+
+export function notificationsQuery(userId: string | undefined) {
+  return queryOptions({
+    queryKey: ["notifications", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("id, title, body, is_read, order_id, created_at")
+        .eq("user_id", userId!)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
 
 export function reviewsQuery(productId: string) {
   return queryOptions({
