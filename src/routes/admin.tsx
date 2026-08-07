@@ -790,7 +790,9 @@ function AdminPage() {
               <Plus className="size-4" /> إضافة بانر
             </Button>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          </Panel>
+          <Panel id="banner-list" title="البانرات الحالية" desc="حذف البانرات القديمة">
+          <div className="grid gap-4 sm:grid-cols-2">
             {(banners.data ?? []).map((b) => (
               <div key={b.id} className="relative overflow-hidden rounded-2xl border">
                 <img src={b.image_url} alt="" className="aspect-[16/7] w-full object-cover" />
@@ -810,11 +812,14 @@ function AdminPage() {
               </div>
             ))}
           </div>
+          </Panel>
         </TabsContent>
 
         {/* COUPONS */}
         <TabsContent value="coupons" className="space-y-4">
-          <div className="grid gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-3">
+          <Panel id="coupon-new" title="إضافة كوبون" desc="أكواد خصم ثابتة أو بنسبة مئوية">
+          <div className="grid gap-4 sm:grid-cols-3">
+
             <div className="space-y-2">
               <Label>الكود</Label>
               <Input
