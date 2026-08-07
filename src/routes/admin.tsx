@@ -714,10 +714,13 @@ function AdminPage() {
               </div>
             ))}
           </div>
+          </Panel>
         </TabsContent>
 
         {/* SHIPPING */}
-        <TabsContent value="shipping" className="space-y-2">
+        <TabsContent value="shipping" className="space-y-4">
+          <Panel id="gov-list" title="أجور التوصيل" desc="حدد أجرة التوصيل لكل محافظة">
+          <div className="space-y-3">
           {(governorates.data ?? []).map((g) => (
             <div key={g.id} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
               <span className="flex-1 text-sm font-medium">{g.name_ar}</span>
@@ -742,11 +745,15 @@ function AdminPage() {
               />
             </div>
           ))}
+          </div>
+          </Panel>
         </TabsContent>
 
         {/* BANNERS */}
         <TabsContent value="banners" className="space-y-4">
-          <div className="grid gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-2">
+          <Panel id="banner-new" title="إضافة بانر" desc="صور تظهر في أعلى الصفحة الرئيسية">
+          <div className="grid gap-4 sm:grid-cols-2">
+
             <FileField
               label="صورة البانر"
               accept="image/*"
