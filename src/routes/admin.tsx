@@ -1173,18 +1173,38 @@ function AdminPage() {
               {(solarComponents.data ?? []).map((c) => (
                 <div
                   key={c.id}
-                  className="grid grid-cols-[minmax(0,1fr)_6rem_auto] items-center gap-2 rounded-xl border p-3"
+                  className="grid grid-cols-[minmax(0,1fr)_7rem_6rem_auto] items-center gap-2 rounded-xl border p-3"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{c.name_ar}</p>
+                    <p className="truncate text-sm font-semibold">
+                      {c.name_ar}
+                      {c.brand ? ` — ${c.brand}` : ""}
+                    </p>
                     <p className="text-[11px] text-muted-foreground" dir="ltr">
                       {c.kind === "panel"
                         ? `${c.capacity}W`
                         : c.kind === "battery"
                           ? `${c.capacity}Ah / ${c.voltage}V`
                           : `${c.capacity}kW`}
+                      {` · ${TIER_LABEL[c.tier] ?? c.tier}`}
                     </p>
                   </div>
+                  <Select
+                    value={c.tier}
+                    onValueChange={async (v) => {
+                      await supabase.from("solar_components").update({ tier: v }).eq("id", c.id);
+                      invalidate(["solar_components"]);
+                    }}
+                  >
+                    <SelectTrigger aria-label="الفئة">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="economy">اقتصادي</SelectItem>
+                      <SelectItem value="mid">متوسط</SelectItem>
+                      <SelectItem value="pro">احترافي</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <NumberField
                     value={Number(c.price)}
                     aria-label="السعر"
