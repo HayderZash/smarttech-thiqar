@@ -219,6 +219,12 @@ function AdminPage() {
   const [couponForm, setCouponForm] = useState({ code: "", discount_type: "fixed", discount_value: 0 });
   const [store, setStore] = useState<Record<string, string>>({});
   const [tab, setTab] = useState("orders");
+  const [q, setQ] = useState("");
+
+  useEffect(() => {
+    const stored = localStorage.getItem("admin_tab");
+    if (stored) setTab(stored);
+  }, []);
 
   const saveProduct = useMutation({
     mutationFn: async () => {
@@ -256,6 +262,22 @@ function AdminPage() {
   const pending = allOrders.filter((o) => o["status"] === "review").length;
   const lowStock = (products.data ?? []).filter((p) => p.stock_qty <= 2);
 
+  const needle = q.trim().toLowerCase();
+  const visibleOrders = needle
+    ? allOrders.filter((o) =>
+        [o["order_number"], o["customer_name"], o["phone"], o["governorate_name"]]
+          .join(" ")
+          .toLowerCase()
+          .includes(needle),
+      )
+    : allOrders;
+  const allProducts = products.data ?? [];
+  const visibleProducts = needle
+    ? allProducts.filter((p) =>
+        [p.name_ar, p.name_en, p.sku].join(" ").toLowerCase().includes(needle),
+      )
+    : allProducts;
+
   const sections = [
     { value: "orders", label: "الطلبات", desc: "متابعة الطلبات وتحديث حالتها", icon: ClipboardList },
     { value: "products", label: "المنتجات", desc: "إضافة المنتجات واستيرادها من Excel", icon: Package },
@@ -267,20 +289,43 @@ function AdminPage() {
   ];
   const active = sections.find((s) => s.value === tab) ?? sections[0]!;
 
+  const changeTab = (v: string) => {
+    setTab(v);
+    localStorage.setItem("admin_tab", v);
+  };
+
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-xl font-bold">لوحة الإدارة</h1>
-        <p className="text-xs text-muted-foreground">إدارة المتجر مقسّمة إلى أقسام مستقلة</p>
+      <header className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <div className="min-w-0 space-y-1">
+          <h1 className="truncate text-xl font-bold">لوحة الإدارة</h1>
+          <p className="text-xs text-muted-foreground">إدارة المتجر مقسّمة إلى أقسام مستقلة</p>
+        </div>
+        <div className="relative w-full sm:w-72">
+          <Search className="pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="بحث سريع عن منتج أو طلب..."
+            aria-label="بحث سريع"
+            className="h-10 rounded-full bg-sand ps-9"
+          />
+        </div>
       </header>
+
+      {needle && (
+        <p className="text-xs text-muted-foreground">
+          نتائج البحث: {visibleProducts.length} منتج · {visibleOrders.length} طلب
+        </p>
+      )}
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-muted-foreground">نظرة عامة</h2>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[
             { label: "الطلبات", value: allOrders.length },
             { label: "قيد المراجعة", value: pending },
-            { label: "المنتجات", value: products.data?.length ?? 0 },
+            { label: "المنتجات", value: allProducts.length },
             { label: "المبيعات", value: formatIQD(revenue, lang) },
           ].map((s) => (
             <div key={s.label} className="rounded-2xl border bg-card p-4">
@@ -291,27 +336,33 @@ function AdminPage() {
         </div>
       </section>
 
-      <Tabs value={tab} onValueChange={setTab} className="space-y-4">
-        <section className="space-y-3">
+      <Tabs
+        value={tab}
+        onValueChange={changeTab}
+        className="grid items-start gap-6 lg:grid-cols-[220px_minmax(0,1fr)]"
+      >
+        <aside className="space-y-3 lg:sticky lg:top-20">
           <h2 className="text-sm font-semibold text-muted-foreground">أقسام الإدارة</h2>
-          <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-4">
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-4 lg:grid-cols-1">
             {sections.map((s) => (
               <TabsTrigger
                 key={s.value}
                 value={s.value}
-                className="flex h-auto w-full flex-col items-center gap-1.5 rounded-2xl border bg-card px-2 py-3 text-xs font-semibold data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="flex h-auto w-full flex-col items-center gap-1.5 rounded-2xl border bg-card px-3 py-3 text-xs font-semibold data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground lg:flex-row lg:justify-start lg:gap-2.5 lg:text-sm"
               >
-                <s.icon className="size-4" />
+                <s.icon className="size-4 shrink-0" />
                 {s.label}
               </TabsTrigger>
             ))}
           </TabsList>
-        </section>
+        </aside>
 
-        <div className="space-y-1 border-t pt-4">
+        <div className="min-w-0 space-y-4">
+        <div className="space-y-1 border-b pb-4 lg:border-b-0 lg:pb-0">
           <h2 className="text-base font-bold">{active.label}</h2>
           <p className="text-xs text-muted-foreground">{active.desc}</p>
         </div>
+
 
 
         {/* ORDERS */}
