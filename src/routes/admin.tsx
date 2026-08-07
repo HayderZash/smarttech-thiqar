@@ -9,6 +9,7 @@ import {
   Plus,
   Search,
   Settings,
+  Star,
   Ticket,
   Trash2,
   Truck,
@@ -39,7 +40,15 @@ import { useAuth } from "@/lib/auth";
 import { ORDER_STATUSES, formatIQD, statusLabel, toLatinDigits, whatsappLink } from "@/lib/format";
 import { localized, useLang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { bannersQuery, categoriesQuery, governoratesQuery, productsQuery, settingsQuery } from "@/lib/queries";
+import {
+  allReviewsQuery,
+  bannersQuery,
+  categoriesQuery,
+  governoratesQuery,
+  productsQuery,
+  settingsQuery,
+  stockAlertsQuery,
+} from "@/lib/queries";
 
 
 export const Route = createFileRoute("/admin")({
@@ -187,6 +196,8 @@ const emptyProduct = {
   catalog_pdf_url: "",
   stock_qty: 0,
   is_featured: false,
+  images_text: "",
+  deal_ends_at: "",
 };
 
 function AdminPage() {
@@ -196,6 +207,8 @@ function AdminPage() {
 
   const products = useQuery(productsQuery);
   const categories = useQuery(categoriesQuery);
+  const reviews = useQuery(allReviewsQuery);
+  const alerts = useQuery(stockAlertsQuery);
   const governorates = useQuery(governoratesQuery);
   const banners = useQuery(bannersQuery);
   const settings = useQuery(settingsQuery);
@@ -231,10 +244,16 @@ function AdminPage() {
 
   const saveProduct = useMutation({
     mutationFn: async () => {
+      const { images_text, deal_ends_at, ...rest } = pform;
       const { error } = await supabase.from("products").insert({
-        ...pform,
+        ...rest,
         category_id: pform.category_id || null,
         discount_price: pform.discount_price || null,
+        images: images_text
+          .split(/[\n,]/)
+          .map((u) => u.trim())
+          .filter(Boolean),
+        deal_ends_at: deal_ends_at ? new Date(deal_ends_at).toISOString() : null,
       });
       if (error) throw error;
     },
@@ -332,6 +351,7 @@ function AdminPage() {
     { value: "shipping", label: "المحافظات", desc: "أجور التوصيل لكل محافظة", icon: Truck },
     { value: "banners", label: "البانرات", desc: "صور الواجهة الرئيسية", icon: ImageIcon },
     { value: "coupons", label: "الكوبونات", desc: "أكواد الخصم", icon: Ticket },
+    { value: "reviews", label: "التقييمات", desc: "اعتماد تقييمات الزبائن وطلبات الإشعار", icon: Star },
     { value: "settings", label: "الإعدادات", desc: "معلومات المتجر والتواصل", icon: Settings },
   ];
   const active = sections.find((s) => s.value === tab) ?? sections[0]!;
@@ -683,6 +703,23 @@ function AdminPage() {
               value={pform.image_url}
               onChange={(url) => setPform({ ...pform, image_url: url })}
             />
+            <div className="space-y-2 sm:col-span-2">
+              <Label>صور إضافية (رابط في كل سطر)</Label>
+              <Textarea
+                rows={2}
+                dir="ltr"
+                value={pform.images_text}
+                onChange={(e) => setPform({ ...pform, images_text: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>نهاية العرض (اختياري)</Label>
+              <Input
+                type="datetime-local"
+                value={pform.deal_ends_at}
+                onChange={(e) => setPform({ ...pform, deal_ends_at: e.target.value })}
+              />
+            </div>
             <FileField
               label="الكتالوج الفني PDF"
               accept="application/pdf"
@@ -1000,6 +1037,97 @@ function AdminPage() {
         </TabsContent>
 
         {/* SETTINGS */}
+        <TabsContent value="reviews" className="space-y-4">
+          <Panel id="reviews-pending" title="التقييمات" desc="اعتمد التقييمات لتظهر في صفحة المنتج">
+            <div className="space-y-2">
+              {(reviews.data ?? []).length === 0 && (
+                <p className="text-sm text-muted-foreground">لا توجد تقييمات</p>
+              )}
+              {(reviews.data ?? []).map((r) => {
+                const prod = (products.data ?? []).find((p) => p.id === r.product_id);
+                return (
+                  <div key={r.id} className="flex flex-wrap items-center gap-3 rounded-xl border p-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">
+                        {prod ? localized(lang, prod.name_ar, prod.name_en) : "—"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {r.author_name || "—"} • {r.rating}/5
+                      </p>
+                      {r.comment && <p className="mt-1 text-sm">{r.comment}</p>}
+                    </div>
+                    {!r.is_approved ? (
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          const { error } = await supabase
+                            .from("reviews")
+                            .update({ is_approved: true })
+                            .eq("id", r.id);
+                          if (error) toast.error(error.message);
+                          else {
+                            toast.success("تم الاعتماد");
+                            invalidate(["reviews"]);
+                          }
+                        }}
+                      >
+                        اعتماد
+                      </Button>
+                    ) : (
+                      <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-semibold text-accent-foreground">
+                        معتمد
+                      </span>
+                    )}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label="حذف"
+                      onClick={async () => {
+                        const { error } = await supabase.from("reviews").delete().eq("id", r.id);
+                        if (error) toast.error(error.message);
+                        else invalidate(["reviews"]);
+                      }}
+                    >
+                      <Trash2 className="size-4 text-destructive" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </Panel>
+
+          <Panel id="stock-alerts" title="طلبات الإشعار بالتوفر" desc="أرقام الزبائن المنتظرين توفر المنتجات">
+            <div className="space-y-2">
+              {(alerts.data ?? []).length === 0 && (
+                <p className="text-sm text-muted-foreground">لا توجد طلبات</p>
+              )}
+              {(alerts.data ?? []).map((a) => {
+                const prod = (products.data ?? []).find((p) => p.id === a["product_id"]);
+                return (
+                  <div key={a["id"] as string} className="flex flex-wrap items-center gap-3 rounded-xl border p-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">
+                        {prod ? localized(lang, prod.name_ar, prod.name_en) : "—"}
+                      </p>
+                      <p className="text-xs text-muted-foreground" dir="ltr">
+                        {a["phone"] as string}
+                      </p>
+                    </div>
+                    <a
+                      href={whatsappLink(String(a["phone"]), "المنتج متوفر الآن في SmartTech")}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-full border px-3 py-1 text-xs font-semibold"
+                    >
+                      واتساب
+                    </a>
+                  </div>
+                );
+              })}
+            </div>
+          </Panel>
+        </TabsContent>
+
         <TabsContent value="settings" className="space-y-4">
           <Panel id="set-store" title="معلومات المتجر" desc="الاسم والشعار والنبذة التعريفية">
             <div className="grid gap-4 sm:grid-cols-2">

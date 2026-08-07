@@ -14,8 +14,12 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as CategoriesRouteImport } from './routes/categories'
+import { Route as DealsRouteImport } from './routes/deals'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as SolarRouteImport } from './routes/solar'
+import { Route as TrackRouteImport } from './routes/track'
+import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -43,6 +47,11 @@ const CategoriesRoute = CategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DealsRoute = DealsRouteImport.update({
+  id: '/deals',
+  path: '/deals',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrdersRoute = OrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -51,6 +60,21 @@ const OrdersRoute = OrdersRouteImport.update({
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SolarRoute = SolarRouteImport.update({
+  id: '/solar',
+  path: '/solar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrackRoute = TrackRouteImport.update({
+  id: '/track',
+  path: '/track',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WishlistRoute = WishlistRouteImport.update({
+  id: '/wishlist',
+  path: '/wishlist',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductIdRoute = ProductIdRouteImport.update({
@@ -65,8 +89,12 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
+  '/deals': typeof DealsRoute
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
+  '/solar': typeof SolarRoute
+  '/track': typeof TrackRoute
+  '/wishlist': typeof WishlistRoute
   '/product/$id': typeof ProductIdRoute
 }
 export interface FileRoutesByTo {
@@ -75,8 +103,12 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
+  '/deals': typeof DealsRoute
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
+  '/solar': typeof SolarRoute
+  '/track': typeof TrackRoute
+  '/wishlist': typeof WishlistRoute
   '/product/$id': typeof ProductIdRoute
 }
 export interface FileRoutesById {
@@ -86,8 +118,12 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
+  '/deals': typeof DealsRoute
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
+  '/solar': typeof SolarRoute
+  '/track': typeof TrackRoute
+  '/wishlist': typeof WishlistRoute
   '/product/$id': typeof ProductIdRoute
 }
 export interface FileRouteTypes {
@@ -98,8 +134,12 @@ export interface FileRouteTypes {
     | '/admin'
     | '/cart'
     | '/categories'
+    | '/deals'
     | '/orders'
     | '/search'
+    | '/solar'
+    | '/track'
+    | '/wishlist'
     | '/product/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -108,8 +148,12 @@ export interface FileRouteTypes {
     | '/admin'
     | '/cart'
     | '/categories'
+    | '/deals'
     | '/orders'
     | '/search'
+    | '/solar'
+    | '/track'
+    | '/wishlist'
     | '/product/$id'
   id:
     | '__root__'
@@ -118,8 +162,12 @@ export interface FileRouteTypes {
     | '/admin'
     | '/cart'
     | '/categories'
+    | '/deals'
     | '/orders'
     | '/search'
+    | '/solar'
+    | '/track'
+    | '/wishlist'
     | '/product/$id'
   fileRoutesById: FileRoutesById
 }
@@ -129,8 +177,12 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   CartRoute: typeof CartRoute
   CategoriesRoute: typeof CategoriesRoute
+  DealsRoute: typeof DealsRoute
   OrdersRoute: typeof OrdersRoute
   SearchRoute: typeof SearchRoute
+  SolarRoute: typeof SolarRoute
+  TrackRoute: typeof TrackRoute
+  WishlistRoute: typeof WishlistRoute
   ProductIdRoute: typeof ProductIdRoute
 }
 
@@ -171,6 +223,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategoriesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/deals': {
+      id: '/deals'
+      path: '/deals'
+      fullPath: '/deals'
+      preLoaderRoute: typeof DealsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/orders': {
       id: '/orders'
       path: '/orders'
@@ -183,6 +242,27 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/solar': {
+      id: '/solar'
+      path: '/solar'
+      fullPath: '/solar'
+      preLoaderRoute: typeof SolarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/track': {
+      id: '/track'
+      path: '/track'
+      fullPath: '/track'
+      preLoaderRoute: typeof TrackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wishlist': {
+      id: '/wishlist'
+      path: '/wishlist'
+      fullPath: '/wishlist'
+      preLoaderRoute: typeof WishlistRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/product/$id': {
@@ -201,8 +281,12 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   CartRoute: CartRoute,
   CategoriesRoute: CategoriesRoute,
+  DealsRoute: DealsRoute,
   OrdersRoute: OrdersRoute,
   SearchRoute: SearchRoute,
+  SolarRoute: SolarRoute,
+  TrackRoute: TrackRoute,
+  WishlistRoute: WishlistRoute,
   ProductIdRoute: ProductIdRoute,
 }
 export const routeTree = rootRouteImport

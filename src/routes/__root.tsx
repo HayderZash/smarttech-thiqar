@@ -16,6 +16,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
 import { CartProvider } from "@/lib/cart";
 import { LanguageProvider } from "@/lib/i18n";
+import { WishlistProvider } from "@/lib/wishlist";
 
 function NotFoundComponent() {
   return (
@@ -125,11 +126,13 @@ function RootComponent() {
       <LanguageProvider>
         <AuthProvider>
           <CartProvider>
+            <WishlistProvider>
             <AppShell>
               {/* Required: nested routes render here. */}
               <Outlet />
             </AppShell>
             <Toaster position="top-center" richColors />
+            </WishlistProvider>
           </CartProvider>
         </AuthProvider>
       </LanguageProvider>
