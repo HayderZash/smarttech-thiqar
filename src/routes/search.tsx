@@ -181,6 +181,8 @@ function SearchPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("allCategories")}</SelectItem>
+              <SelectItem value="none">{generalLabel}</SelectItem>
+
               {allCats.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {localized(lang, c.name_ar, c.name_en)}
