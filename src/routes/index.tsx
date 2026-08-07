@@ -10,13 +10,13 @@ import { bannersQuery, categoriesQuery, productsQuery } from "@/lib/queries";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "متجر النور | إلكترونيات وكهربائيات وطاقة شمسية" },
+      { title: "SmartTech | إلكترونيات وكهربائيات وطاقة شمسية" },
       {
         name: "description",
         content:
           "تسوق الإلكترونيات والمواد الكهربائية ومنظومات الطاقة الشمسية ومواد البناء مع توصيل لكل محافظات العراق.",
       },
-      { property: "og:title", content: "متجر النور | تسوق أونلاين في العراق" },
+      { property: "og:title", content: "SmartTech | تسوق أونلاين في العراق" },
       {
         property: "og:description",
         content: "إلكترونيات، كهربائيات، طاقة شمسية ومواد بناء مع توصيل لجميع المحافظات.",
@@ -75,7 +75,7 @@ function Home() {
 
   return (
     <div>
-      <h1 className="sr-only">متجر النور — إلكترونيات وكهربائيات وطاقة شمسية</h1>
+      <h1 className="sr-only">SmartTech — إلكترونيات وكهربائيات وطاقة شمسية</h1>
 
       {banners.data && banners.data.length > 0 && (
         <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1">

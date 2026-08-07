@@ -14,9 +14,9 @@ import { productsQuery } from "@/lib/queries";
 export const Route = createFileRoute("/product/$id")({
   head: () => ({
     meta: [
-      { title: "تفاصيل المنتج | متجر النور" },
+      { title: "تفاصيل المنتج | SmartTech" },
       { name: "description", content: "تفاصيل المنتج والسعر وحالة التوفر والكتالوج الفني." },
-      { property: "og:title", content: "تفاصيل المنتج | متجر النور" },
+      { property: "og:title", content: "تفاصيل المنتج | SmartTech" },
       { property: "og:description", content: "اطلع على تفاصيل المنتج وأضفه إلى سلتك." },
     ],
   }),

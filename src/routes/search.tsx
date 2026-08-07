@@ -25,9 +25,9 @@ export const Route = createFileRoute("/search")({
   }),
   head: () => ({
     meta: [
-      { title: "البحث عن المنتجات | متجر النور" },
+      { title: "البحث عن المنتجات | SmartTech" },
       { name: "description", content: "ابحث عن المنتجات وفلترها حسب القسم والسعر." },
-      { property: "og:title", content: "البحث | متجر النور" },
+      { property: "og:title", content: "البحث | SmartTech" },
       { property: "og:description", content: "ابحث وفلتر منتجات المتجر حسب القسم والسعر." },
     ],
   }),

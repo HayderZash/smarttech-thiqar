@@ -20,12 +20,12 @@ export const Route = createFileRoute("/categories")({
 
   head: () => ({
     meta: [
-      { title: "الأقسام | متجر النور" },
+      { title: "الأقسام | SmartTech" },
       {
         name: "description",
         content: "تصفح أقسام المتجر: إلكترونيات، كهربائيات، طاقة شمسية، مواد بناء ومستلزمات عامة.",
       },
-      { property: "og:title", content: "أقسام متجر النور" },
+      { property: "og:title", content: "أقسام SmartTech" },
       { property: "og:description", content: "تصفح كل أقسام المتجر والمنتجات المتوفرة." },
     ],
   }),
