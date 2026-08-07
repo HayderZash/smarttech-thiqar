@@ -20,7 +20,8 @@ import {
 import { useCart } from "@/lib/cart";
 import { discountPercent, effectivePrice, formatIQD } from "@/lib/format";
 import { localized, useLang } from "@/lib/i18n";
-import { governoratesQuery, productsQuery } from "@/lib/queries";
+import { categoriesQuery, governoratesQuery, productsQuery } from "@/lib/queries";
+import { categoryChain } from "@/lib/category-path";
 import { getRecent, pushRecent } from "@/lib/recent";
 import { useWishlist } from "@/lib/wishlist";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,7 @@ function ProductPage() {
   const wishlist = useWishlist();
   const { data, isLoading } = useQuery(productsQuery);
   const { data: govs } = useQuery(governoratesQuery);
+  const { data: cats } = useQuery(categoriesQuery);
   const [qty, setQty] = useState(1);
   const [active, setActive] = useState(0);
   const [gov, setGov] = useState<string>("");
@@ -91,6 +93,7 @@ function ProductPage() {
   const shipping = govs?.find((g) => g.id === gov)?.shipping_cost;
   const name = localized(lang, product.name_ar, product.name_en);
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+  const chain = categoryChain(cats ?? [], product.category_id);
 
   return (
     <div>
@@ -141,6 +144,28 @@ function ProductPage() {
             <div className="flex flex-wrap items-center gap-2">
               <StockBadge qty={product.stock_qty} />
               {product.deal_ends_at && <Countdown endsAt={product.deal_ends_at} />}
+            </div>
+            <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+              <Link to="/categories" className="hover:text-primary">
+                {t("categories")}
+              </Link>
+              {chain.length === 0 ? (
+                <>
+                  <span>›</span>
+                  <Link to="/search" search={{ cat: "none" }} className="hover:text-primary">
+                    {lang === "ar" ? "العام" : "General"}
+                  </Link>
+                </>
+              ) : (
+                chain.map((c) => (
+                  <span key={c.id} className="flex items-center gap-1">
+                    <span>›</span>
+                    <Link to="/search" search={{ cat: c.id }} className="font-medium hover:text-primary">
+                      {localized(lang, c.name_ar, c.name_en)}
+                    </Link>
+                  </span>
+                ))
+              )}
             </div>
             <h1 className="text-xl font-bold leading-snug">{name}</h1>
             {product.sku && (
