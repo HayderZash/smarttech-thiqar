@@ -10,6 +10,7 @@ import {
   Search,
   Settings,
   Star,
+  Sun,
   Ticket,
   Trash2,
   Truck,
@@ -42,6 +43,7 @@ import { localized, useLang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
   allReviewsQuery,
+  allSolarComponentsQuery,
   bannersQuery,
   categoriesQuery,
   governoratesQuery,
@@ -200,6 +202,16 @@ const emptyProduct = {
   deal_ends_at: "",
 };
 
+const emptySolar = {
+  kind: "panel",
+  name_ar: "",
+  name_en: "",
+  capacity: 0,
+  voltage: 51.2,
+  price: 0,
+};
+
+
 function AdminPage() {
   const { lang } = useLang();
   const { isAdmin, loading } = useAuth();
@@ -209,6 +221,7 @@ function AdminPage() {
   const categories = useQuery(categoriesQuery);
   const reviews = useQuery(allReviewsQuery);
   const alerts = useQuery(stockAlertsQuery);
+  const solarComponents = useQuery(allSolarComponentsQuery);
   const governorates = useQuery(governoratesQuery);
   const banners = useQuery(bannersQuery);
   const settings = useQuery(settingsQuery);
@@ -231,6 +244,7 @@ function AdminPage() {
   const [cform, setCform] = useState({ name_ar: "", name_en: "", image_url: "", parent_id: "" });
   const [bform, setBform] = useState({ image_url: "", title_ar: "", title_en: "", link_url: "" });
   const [couponForm, setCouponForm] = useState({ code: "", discount_type: "fixed", discount_value: 0 });
+  const [solarForm, setSolarForm] = useState({ ...emptySolar });
   const [store, setStore] = useState<Record<string, string>>({});
   const [tab, setTab] = useState("orders");
   const [q, setQ] = useState("");
@@ -351,6 +365,7 @@ function AdminPage() {
     { value: "shipping", label: "المحافظات", desc: "أجور التوصيل لكل محافظة", icon: Truck },
     { value: "banners", label: "البانرات", desc: "صور الواجهة الرئيسية", icon: ImageIcon },
     { value: "coupons", label: "الكوبونات", desc: "أكواد الخصم", icon: Ticket },
+    { value: "solar", label: "الطاقة الشمسية", desc: "الألواح والبطاريات والإنفرترات وأسعارها", icon: Sun },
     { value: "reviews", label: "التقييمات", desc: "اعتماد تقييمات الزبائن وطلبات الإشعار", icon: Star },
     { value: "settings", label: "الإعدادات", desc: "معلومات المتجر والتواصل", icon: Settings },
   ];
@@ -1033,6 +1048,136 @@ function AdminPage() {
               <Plus className="size-4" /> إضافة كوبون
             </Button>
           </div>
+          </Panel>
+        </TabsContent>
+
+        {/* SOLAR */}
+        <TabsContent value="solar" className="space-y-4">
+          <Panel id="solar-new" title="إضافة مكوّن" desc="ألواح، بطاريات ليثيوم، إنفرترات مع أسعارها">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>النوع</Label>
+                <Select
+                  value={solarForm.kind}
+                  onValueChange={(v) => setSolarForm({ ...solarForm, kind: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="panel">لوح شمسي</SelectItem>
+                    <SelectItem value="battery">بطارية LiFePO4</SelectItem>
+                    <SelectItem value="inverter">إنفرتر</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>الاسم بالعربية</Label>
+                <Input
+                  value={solarForm.name_ar}
+                  onChange={(e) => setSolarForm({ ...solarForm, name_ar: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>الاسم بالإنجليزية</Label>
+                <Input
+                  dir="ltr"
+                  value={solarForm.name_en}
+                  onChange={(e) => setSolarForm({ ...solarForm, name_en: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>
+                  {solarForm.kind === "panel"
+                    ? "واطية اللوح (W)"
+                    : solarForm.kind === "battery"
+                      ? "سعة البطارية (Ah)"
+                      : "قدرة الإنفرتر (kW)"}
+                </Label>
+                <NumberField
+                  value={solarForm.capacity}
+                  onValueChange={(v) => setSolarForm({ ...solarForm, capacity: v ?? 0 })}
+                />
+              </div>
+              {solarForm.kind === "battery" && (
+                <div className="space-y-2">
+                  <Label>فولتية البطارية (V)</Label>
+                  <NumberField
+                    value={solarForm.voltage}
+                    onValueChange={(v) => setSolarForm({ ...solarForm, voltage: v ?? 0 })}
+                  />
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label>السعر (د.ع)</Label>
+                <NumberField
+                  value={solarForm.price}
+                  onValueChange={(v) => setSolarForm({ ...solarForm, price: v ?? 0 })}
+                />
+              </div>
+              <Button
+                className="sm:col-span-2"
+                disabled={!solarForm.name_ar}
+                onClick={async () => {
+                  const { error } = await supabase.from("solar_components").insert(solarForm as never);
+                  if (error) toast.error(error.message);
+                  else {
+                    setSolarForm({ ...emptySolar });
+                    invalidate(["solar_components"]);
+                    toast.success("تمت الإضافة");
+                  }
+                }}
+              >
+                <Plus className="size-4" /> إضافة مكوّن
+              </Button>
+            </div>
+          </Panel>
+
+          <Panel id="solar-list" title="مكوّنات المنظومة" desc="تعديل الأسعار أو الحذف">
+            <div className="space-y-2">
+              {(solarComponents.data ?? []).length === 0 && (
+                <p className="text-sm text-muted-foreground">لا توجد مكوّنات</p>
+              )}
+              {(solarComponents.data ?? []).map((c) => (
+                <div
+                  key={c.id}
+                  className="grid grid-cols-[minmax(0,1fr)_6rem_auto] items-center gap-2 rounded-xl border p-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{c.name_ar}</p>
+                    <p className="text-[11px] text-muted-foreground" dir="ltr">
+                      {c.kind === "panel"
+                        ? `${c.capacity}W`
+                        : c.kind === "battery"
+                          ? `${c.capacity}Ah / ${c.voltage}V`
+                          : `${c.capacity}kW`}
+                    </p>
+                  </div>
+                  <NumberField
+                    value={Number(c.price)}
+                    aria-label="السعر"
+                    onValueChange={async (v) => {
+                      await supabase
+                        .from("solar_components")
+                        .update({ price: v ?? 0 })
+                        .eq("id", c.id);
+                      invalidate(["solar_components"]);
+                    }}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="حذف"
+                    onClick={async () => {
+                      await supabase.from("solar_components").delete().eq("id", c.id);
+                      invalidate(["solar_components"]);
+                    }}
+                  >
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
           </Panel>
         </TabsContent>
 

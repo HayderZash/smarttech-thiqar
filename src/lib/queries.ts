@@ -166,3 +166,41 @@ export const stockAlertsQuery = queryOptions({
     return data ?? [];
   },
 });
+
+export type SolarComponent = {
+  id: string;
+  kind: "panel" | "battery" | "inverter";
+  name_ar: string;
+  name_en: string;
+  capacity: number;
+  voltage: number;
+  price: number;
+  is_active: boolean;
+  sort_order: number;
+};
+
+export const solarComponentsQuery = queryOptions({
+  queryKey: ["solar_components"],
+  queryFn: async (): Promise<SolarComponent[]> => {
+    const { data, error } = await supabase
+      .from("solar_components")
+      .select("id, kind, name_ar, name_en, capacity, voltage, price, is_active, sort_order")
+      .eq("is_active", true)
+      .order("sort_order");
+    if (error) throw error;
+    return (data ?? []) as SolarComponent[];
+  },
+});
+
+export const allSolarComponentsQuery = queryOptions({
+  queryKey: ["solar_components", "all"],
+  queryFn: async (): Promise<SolarComponent[]> => {
+    const { data, error } = await supabase
+      .from("solar_components")
+      .select("id, kind, name_ar, name_en, capacity, voltage, price, is_active, sort_order")
+      .order("kind")
+      .order("sort_order");
+    if (error) throw error;
+    return (data ?? []) as SolarComponent[];
+  },
+});

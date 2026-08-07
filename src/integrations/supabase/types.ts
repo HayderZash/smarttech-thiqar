@@ -373,6 +373,45 @@ export type Database = {
           },
         ]
       }
+      solar_components: {
+        Row: {
+          capacity: number
+          created_at: string
+          id: string
+          is_active: boolean
+          kind: string
+          name_ar: string
+          name_en: string
+          price: number
+          sort_order: number
+          voltage: number
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind: string
+          name_ar: string
+          name_en?: string
+          price?: number
+          sort_order?: number
+          voltage?: number
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          name_ar?: string
+          name_en?: string
+          price?: number
+          sort_order?: number
+          voltage?: number
+        }
+        Relationships: []
+      }
       stock_alerts: {
         Row: {
           created_at: string
