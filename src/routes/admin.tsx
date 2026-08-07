@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import {
   ChevronDown,
   ClipboardList,
@@ -47,6 +48,7 @@ import { CATEGORY_ICON_KEYS, CategoryIcon } from "@/lib/category-icons";
 import { useAuth } from "@/lib/auth";
 import { ORDER_STATUSES, formatIQD, statusLabel, toLatinDigits, whatsappLink } from "@/lib/format";
 import { localized, useLang } from "@/lib/i18n";
+import { setItemUnavailable } from "@/lib/orders.functions";
 import { cn } from "@/lib/utils";
 import {
   allReviewsQuery,
@@ -318,7 +320,7 @@ function AdminPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, order_items(id, product_name, quantity, unit_price)")
+        .select("*, order_items(id, product_name, quantity, unit_price, is_unavailable)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -349,6 +351,7 @@ function AdminPage() {
   const [couponForm, setCouponForm] = useState({ code: "", discount_type: "fixed", discount_value: 0 });
   const [solarForm, setSolarForm] = useState({ ...emptySolar });
   const [store, setStore] = useState<Record<string, string>>({});
+  const markUnavailable = useServerFn(setItemUnavailable);
   const [tab, setTab] = useState("orders");
   const [q, setQ] = useState("");
   const [scope, setScope] = useState<"all" | "products" | "orders">("all");
