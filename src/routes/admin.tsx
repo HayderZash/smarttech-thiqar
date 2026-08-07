@@ -973,6 +973,15 @@ function AdminPage() {
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label="edit"
+                  onClick={() => startEdit(p)}
+                >
+                  <Pencil className="size-4" />
+                </Button>
+                <Button
+
+                  variant="ghost"
+                  size="icon"
                   className="text-destructive"
                   aria-label="delete"
                   onClick={async () => {
