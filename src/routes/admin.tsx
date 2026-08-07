@@ -762,7 +762,12 @@ function AdminPage() {
             products={(products.data ?? []) as never}
             onDone={() => invalidate(["products"])}
           />
-          <Panel id="product-new" title="إضافة منتج" desc="أدخل بيانات المنتج الجديد">
+          <Panel
+            id="product-new"
+            title={editingId ? "تعديل منتج" : "إضافة منتج"}
+            desc={editingId ? "عدّل بيانات المنتج ثم احفظ" : "أدخل بيانات المنتج الجديد"}
+          >
+
           <div className="grid gap-4 sm:grid-cols-2">
 
             <div className="space-y-2">
