@@ -187,6 +187,8 @@ const emptyProduct = {
   catalog_pdf_url: "",
   stock_qty: 0,
   is_featured: false,
+  images_text: "",
+  deal_ends_at: "",
 };
 
 function AdminPage() {
@@ -231,10 +233,16 @@ function AdminPage() {
 
   const saveProduct = useMutation({
     mutationFn: async () => {
+      const { images_text, deal_ends_at, ...rest } = pform;
       const { error } = await supabase.from("products").insert({
-        ...pform,
+        ...rest,
         category_id: pform.category_id || null,
         discount_price: pform.discount_price || null,
+        images: images_text
+          .split(/[\n,]/)
+          .map((u) => u.trim())
+          .filter(Boolean),
+        deal_ends_at: deal_ends_at ? new Date(deal_ends_at).toISOString() : null,
       });
       if (error) throw error;
     },
@@ -332,6 +340,7 @@ function AdminPage() {
     { value: "shipping", label: "المحافظات", desc: "أجور التوصيل لكل محافظة", icon: Truck },
     { value: "banners", label: "البانرات", desc: "صور الواجهة الرئيسية", icon: ImageIcon },
     { value: "coupons", label: "الكوبونات", desc: "أكواد الخصم", icon: Ticket },
+    { value: "reviews", label: "التقييمات", desc: "اعتماد تقييمات الزبائن وطلبات الإشعار", icon: Star },
     { value: "settings", label: "الإعدادات", desc: "معلومات المتجر والتواصل", icon: Settings },
   ];
   const active = sections.find((s) => s.value === tab) ?? sections[0]!;
@@ -683,6 +692,23 @@ function AdminPage() {
               value={pform.image_url}
               onChange={(url) => setPform({ ...pform, image_url: url })}
             />
+            <div className="space-y-2 sm:col-span-2">
+              <Label>صور إضافية (رابط في كل سطر)</Label>
+              <Textarea
+                rows={2}
+                dir="ltr"
+                value={pform.images_text}
+                onChange={(e) => setPform({ ...pform, images_text: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>نهاية العرض (اختياري)</Label>
+              <Input
+                type="datetime-local"
+                value={pform.deal_ends_at}
+                onChange={(e) => setPform({ ...pform, deal_ends_at: e.target.value })}
+              />
+            </div>
             <FileField
               label="الكتالوج الفني PDF"
               accept="application/pdf"
