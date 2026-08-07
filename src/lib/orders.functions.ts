@@ -163,6 +163,51 @@ type NotifyPayload = {
   total: number;
 };
 
+const GATEWAY = "https://connector-gateway.lovable.dev/telegram";
+
+function tgHeaders(lovableKey: string, telegramKey: string) {
+  return {
+    Authorization: `Bearer ${lovableKey}`,
+    "X-Connection-Api-Key": telegramKey,
+    "Content-Type": "application/json",
+  };
+}
+
+/**
+ * Falls back to discovering the admin's chat id from recent bot updates
+ * (the admin only needs to press Start once in Telegram), then persists it.
+ */
+async function resolveChatId(
+  lovableKey: string,
+  telegramKey: string,
+  username: string,
+): Promise<string | null> {
+  const res = await fetch(`${GATEWAY}/getUpdates`, {
+    method: "POST",
+    headers: tgHeaders(lovableKey, telegramKey),
+    body: JSON.stringify({ limit: 100 }),
+  });
+  if (!res.ok) return null;
+  const json = (await res.json()) as {
+    result?: { message?: { chat?: { id?: number; username?: string } } }[];
+  };
+  const wanted = username.replace(/^@/, "").toLowerCase();
+  const hit = (json.result ?? []).find(
+    (u) => u.message?.chat?.username?.toLowerCase() === wanted,
+  );
+  const id = hit?.message?.chat?.id;
+  if (!id) return null;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin
+      .from("store_settings")
+      .upsert({ key: "telegram_chat_id", value: String(id) });
+  } catch (err) {
+    console.error("Failed to persist telegram chat id", err);
+  }
+  return String(id);
+}
+
 async function notifyTelegram(
   supabase: { from: (t: string) => any },
   payload: NotifyPayload,
@@ -172,13 +217,24 @@ async function notifyTelegram(
     const telegramKey = process.env["TELEGRAM_API_KEY"];
     if (!lovableKey || !telegramKey) return;
 
-    const { data: setting } = await supabase
+    const { data: settings } = await supabase
       .from("store_settings")
-      .select("value")
-      .eq("key", "telegram_chat_id")
-      .maybeSingle();
-    const chatId = setting?.value?.trim();
+      .select("key, value")
+      .in("key", ["telegram_chat_id", "telegram_admin_username"]);
+    const map = new Map<string, string>(
+      (settings ?? []).map((s: { key: string; value: string }) => [s.key, s.value]),
+    );
+    let chatId = map.get("telegram_chat_id")?.trim();
+    if (!chatId) {
+      chatId =
+        (await resolveChatId(
+          lovableKey,
+          telegramKey,
+          map.get("telegram_admin_username")?.trim() || "HayderZash",
+        )) ?? undefined;
+    }
     if (!chatId) return;
+
 
     const itemLines = payload.lines.map((l) => `• ${l.product_name} × ${l.quantity}`).join("\n");
     const text = [
