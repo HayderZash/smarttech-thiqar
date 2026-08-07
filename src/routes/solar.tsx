@@ -74,6 +74,10 @@ function SolarPage() {
   const [amps, setAmps] = useState(20);
   const [ampHours, setAmpHours] = useState(6);
 
+  // national grid alternating schedule
+  const [gridOn, setGridOn] = useState(6);
+  const [gridOff, setGridOff] = useState(6);
+
   // system settings
   const [panelWatt, setPanelWatt] = useState(DEFAULTS.panelWatt);
   const [sunHours, setSunHours] = useState(DEFAULTS.sunHours);
