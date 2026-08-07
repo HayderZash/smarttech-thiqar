@@ -4,7 +4,9 @@ import { Plus, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { ProductsExcel } from "@/components/ProductsExcel";
 import { Button } from "@/components/ui/button";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -306,7 +308,13 @@ function AdminPage() {
 
         {/* PRODUCTS */}
         <TabsContent value="products" className="space-y-4">
+          <ProductsExcel
+            categories={categories.data ?? []}
+            products={(products.data ?? []) as never}
+            onDone={() => invalidate(["products"])}
+          />
           <div className="grid gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-2">
+
             <h2 className="text-base font-bold sm:col-span-2">إضافة منتج</h2>
             <div className="space-y-2">
               <Label>الاسم بالعربية</Label>
