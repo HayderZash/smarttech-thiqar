@@ -1,22 +1,25 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  ChevronDown,
   ClipboardList,
   Image as ImageIcon,
   LayoutGrid,
   Package,
   Plus,
+  Search,
   Settings,
   Ticket,
   Trash2,
   Truck,
   Upload,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { ProductsExcel } from "@/components/ProductsExcel";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,7 +37,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { ORDER_STATUSES, formatIQD, statusLabel, whatsappLink } from "@/lib/format";
 import { localized, useLang } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import { bannersQuery, categoriesQuery, governoratesQuery, productsQuery, settingsQuery } from "@/lib/queries";
+
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -116,6 +121,58 @@ function FileField({
   );
 }
 
+/** Collapsible admin card whose open/closed state survives reloads. */
+function Panel({
+  id,
+  title,
+  desc,
+  action,
+  children,
+  defaultOpen = true,
+}: {
+  id: string;
+  title: string;
+  desc?: string;
+  action?: ReactNode;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(`admin_panel_${id}`);
+    if (stored === "0" || stored === "1") setOpen(stored === "1");
+  }, [id]);
+
+  return (
+    <Collapsible
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        localStorage.setItem(`admin_panel_${id}`, v ? "1" : "0");
+      }}
+      className="rounded-2xl border bg-card"
+    >
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4">
+        <CollapsibleTrigger className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-start">
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-bold">{title}</span>
+            {desc && <span className="block truncate text-xs text-muted-foreground">{desc}</span>}
+          </span>
+          <ChevronDown
+            className={cn("size-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
+          />
+        </CollapsibleTrigger>
+        {action}
+      </div>
+      <CollapsibleContent>
+        <div className="border-t p-4">{children}</div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+
 const emptyProduct = {
   sku: "",
   name_ar: "",
@@ -162,6 +219,12 @@ function AdminPage() {
   const [couponForm, setCouponForm] = useState({ code: "", discount_type: "fixed", discount_value: 0 });
   const [store, setStore] = useState<Record<string, string>>({});
   const [tab, setTab] = useState("orders");
+  const [q, setQ] = useState("");
+
+  useEffect(() => {
+    const stored = localStorage.getItem("admin_tab");
+    if (stored) setTab(stored);
+  }, []);
 
   const saveProduct = useMutation({
     mutationFn: async () => {
@@ -199,6 +262,22 @@ function AdminPage() {
   const pending = allOrders.filter((o) => o["status"] === "review").length;
   const lowStock = (products.data ?? []).filter((p) => p.stock_qty <= 2);
 
+  const needle = q.trim().toLowerCase();
+  const visibleOrders = needle
+    ? allOrders.filter((o) =>
+        [o["order_number"], o["customer_name"], o["phone"], o["governorate_name"]]
+          .join(" ")
+          .toLowerCase()
+          .includes(needle),
+      )
+    : allOrders;
+  const allProducts = products.data ?? [];
+  const visibleProducts = needle
+    ? allProducts.filter((p) =>
+        [p.name_ar, p.name_en, p.sku].join(" ").toLowerCase().includes(needle),
+      )
+    : allProducts;
+
   const sections = [
     { value: "orders", label: "الطلبات", desc: "متابعة الطلبات وتحديث حالتها", icon: ClipboardList },
     { value: "products", label: "المنتجات", desc: "إضافة المنتجات واستيرادها من Excel", icon: Package },
@@ -210,20 +289,43 @@ function AdminPage() {
   ];
   const active = sections.find((s) => s.value === tab) ?? sections[0]!;
 
+  const changeTab = (v: string) => {
+    setTab(v);
+    localStorage.setItem("admin_tab", v);
+  };
+
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-xl font-bold">لوحة الإدارة</h1>
-        <p className="text-xs text-muted-foreground">إدارة المتجر مقسّمة إلى أقسام مستقلة</p>
+      <header className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <div className="min-w-0 space-y-1">
+          <h1 className="truncate text-xl font-bold">لوحة الإدارة</h1>
+          <p className="text-xs text-muted-foreground">إدارة المتجر مقسّمة إلى أقسام مستقلة</p>
+        </div>
+        <div className="relative w-full sm:w-72">
+          <Search className="pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="بحث سريع عن منتج أو طلب..."
+            aria-label="بحث سريع"
+            className="h-10 rounded-full bg-sand ps-9"
+          />
+        </div>
       </header>
+
+      {needle && (
+        <p className="text-xs text-muted-foreground">
+          نتائج البحث: {visibleProducts.length} منتج · {visibleOrders.length} طلب
+        </p>
+      )}
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-muted-foreground">نظرة عامة</h2>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[
             { label: "الطلبات", value: allOrders.length },
             { label: "قيد المراجعة", value: pending },
-            { label: "المنتجات", value: products.data?.length ?? 0 },
+            { label: "المنتجات", value: allProducts.length },
             { label: "المبيعات", value: formatIQD(revenue, lang) },
           ].map((s) => (
             <div key={s.label} className="rounded-2xl border bg-card p-4">
@@ -234,40 +336,47 @@ function AdminPage() {
         </div>
       </section>
 
-      <Tabs value={tab} onValueChange={setTab} className="space-y-4">
-        <section className="space-y-3">
+      <Tabs
+        value={tab}
+        onValueChange={changeTab}
+        className="grid items-start gap-6 lg:grid-cols-[220px_minmax(0,1fr)]"
+      >
+        <aside className="space-y-3 lg:sticky lg:top-20">
           <h2 className="text-sm font-semibold text-muted-foreground">أقسام الإدارة</h2>
-          <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-4">
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-4 lg:grid-cols-1">
             {sections.map((s) => (
               <TabsTrigger
                 key={s.value}
                 value={s.value}
-                className="flex h-auto w-full flex-col items-center gap-1.5 rounded-2xl border bg-card px-2 py-3 text-xs font-semibold data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="flex h-auto w-full flex-col items-center gap-1.5 rounded-2xl border bg-card px-3 py-3 text-xs font-semibold data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground lg:flex-row lg:justify-start lg:gap-2.5 lg:text-sm"
               >
-                <s.icon className="size-4" />
+                <s.icon className="size-4 shrink-0" />
                 {s.label}
               </TabsTrigger>
             ))}
           </TabsList>
-        </section>
+        </aside>
 
-        <div className="space-y-1 border-t pt-4">
+        <div className="min-w-0 space-y-4">
+        <div className="space-y-1 border-b pb-4 lg:border-b-0 lg:pb-0">
           <h2 className="text-base font-bold">{active.label}</h2>
           <p className="text-xs text-muted-foreground">{active.desc}</p>
         </div>
 
 
+
         {/* ORDERS */}
-        <TabsContent value="orders" className="space-y-3">
-          {allOrders.length === 0 && (
+        <TabsContent value="orders" className="space-y-4">
+          {visibleOrders.length === 0 && (
             <p className="py-10 text-center text-sm text-muted-foreground">لا توجد طلبات</p>
           )}
-          {allOrders.map((o) => (
+          {visibleOrders.map((o) => (
             <div key={o["id"]} className="space-y-3 rounded-2xl border bg-card p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="font-bold">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                <h3 className="truncate text-sm font-bold">
                   #{o["order_number"]} — {o["customer_name"]}
-                </h2>
+                </h3>
+
                 <span className="text-xs text-muted-foreground">
                   {new Date(o["created_at"]).toLocaleString("ar-IQ")}
                 </span>
@@ -354,9 +463,9 @@ function AdminPage() {
             products={(products.data ?? []) as never}
             onDone={() => invalidate(["products"])}
           />
-          <div className="grid gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-2">
+          <Panel id="product-new" title="إضافة منتج" desc="أدخل بيانات المنتج الجديد">
+          <div className="grid gap-4 sm:grid-cols-2">
 
-            <h2 className="text-base font-bold sm:col-span-2">إضافة منتج</h2>
             <div className="space-y-2">
               <Label>الاسم بالعربية</Label>
               <Input value={pform.name_ar} onChange={(e) => setPform({ ...pform, name_ar: e.target.value })} />
@@ -459,9 +568,10 @@ function AdminPage() {
               <Plus className="size-4" /> إضافة المنتج
             </Button>
           </div>
+          </Panel>
 
           {lowStock.length > 0 && (
-            <div className="rounded-2xl border border-warning bg-warning/10 p-3 text-sm">
+            <div className="rounded-2xl border border-warning bg-warning/10 p-4 text-sm">
               <p className="font-semibold">تنبيه انخفاض المخزون:</p>
               {lowStock.map((p) => (
                 <span key={p.id} className="me-2">
@@ -471,8 +581,10 @@ function AdminPage() {
             </div>
           )}
 
-          <div className="space-y-2">
-            {(products.data ?? []).map((p) => (
+          <Panel id="product-list" title={`قائمة المنتجات (${visibleProducts.length})`} desc="تعديل المخزون أو الحذف">
+          <div className="space-y-3">
+            {visibleProducts.map((p) => (
+
               <div key={p.id} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
                 <div className="size-12 shrink-0 overflow-hidden rounded-xl bg-sand">
                   {p.image_url && <img src={p.image_url} alt="" className="h-full w-full object-cover" />}
@@ -515,11 +627,14 @@ function AdminPage() {
               </div>
             ))}
           </div>
+          </Panel>
         </TabsContent>
 
         {/* CATEGORIES */}
         <TabsContent value="categories" className="space-y-4">
-          <div className="grid gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-2">
+          <Panel id="cat-new" title="إضافة قسم" desc="أنشئ قسماً رئيسياً أو فرعياً">
+          <div className="grid gap-4 sm:grid-cols-2">
+
             <div className="space-y-2">
               <Label>الاسم بالعربية</Label>
               <Input value={cform.name_ar} onChange={(e) => setCform({ ...cform, name_ar: e.target.value })} />
@@ -573,8 +688,11 @@ function AdminPage() {
               <Plus className="size-4" /> إضافة قسم
             </Button>
           </div>
-          <div className="space-y-2">
+          </Panel>
+          <Panel id="cat-list" title="قائمة الأقسام" desc="حذف الأقسام غير المستخدمة">
+          <div className="space-y-3">
             {(categories.data ?? []).map((c) => (
+
               <div key={c.id} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
                 <span className="flex-1 text-sm font-medium">
                   {c.parent_id ? "— " : ""}
@@ -596,10 +714,13 @@ function AdminPage() {
               </div>
             ))}
           </div>
+          </Panel>
         </TabsContent>
 
         {/* SHIPPING */}
-        <TabsContent value="shipping" className="space-y-2">
+        <TabsContent value="shipping" className="space-y-4">
+          <Panel id="gov-list" title="أجور التوصيل" desc="حدد أجرة التوصيل لكل محافظة">
+          <div className="space-y-3">
           {(governorates.data ?? []).map((g) => (
             <div key={g.id} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
               <span className="flex-1 text-sm font-medium">{g.name_ar}</span>
@@ -624,11 +745,15 @@ function AdminPage() {
               />
             </div>
           ))}
+          </div>
+          </Panel>
         </TabsContent>
 
         {/* BANNERS */}
         <TabsContent value="banners" className="space-y-4">
-          <div className="grid gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-2">
+          <Panel id="banner-new" title="إضافة بانر" desc="صور تظهر في أعلى الصفحة الرئيسية">
+          <div className="grid gap-4 sm:grid-cols-2">
+
             <FileField
               label="صورة البانر"
               accept="image/*"
@@ -665,7 +790,9 @@ function AdminPage() {
               <Plus className="size-4" /> إضافة بانر
             </Button>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          </Panel>
+          <Panel id="banner-list" title="البانرات الحالية" desc="حذف البانرات القديمة">
+          <div className="grid gap-4 sm:grid-cols-2">
             {(banners.data ?? []).map((b) => (
               <div key={b.id} className="relative overflow-hidden rounded-2xl border">
                 <img src={b.image_url} alt="" className="aspect-[16/7] w-full object-cover" />
@@ -685,11 +812,14 @@ function AdminPage() {
               </div>
             ))}
           </div>
+          </Panel>
         </TabsContent>
 
         {/* COUPONS */}
         <TabsContent value="coupons" className="space-y-4">
-          <div className="grid gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-3">
+          <Panel id="coupon-new" title="إضافة كوبون" desc="أكواد خصم ثابتة أو بنسبة مئوية">
+          <div className="grid gap-4 sm:grid-cols-3">
+
             <div className="space-y-2">
               <Label>الكود</Label>
               <Input
@@ -736,50 +866,102 @@ function AdminPage() {
               <Plus className="size-4" /> إضافة كوبون
             </Button>
           </div>
+          </Panel>
         </TabsContent>
 
         {/* SETTINGS */}
-        <TabsContent value="settings" className="space-y-3">
-          <div className="grid gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-2">
-            {[
-              { key: "store_name_ar", label: "اسم المتجر (عربي)" },
-              { key: "store_name_en", label: "اسم المتجر (إنكليزي)" },
-              { key: "support_whatsapp", label: "رقم واتساب الدعم" },
-              { key: "telegram_chat_id", label: "معرّف محادثة تيليجرام للإشعارات" },
-            ].map((f) => (
-              <div key={f.key} className="space-y-2">
-                <Label>{f.label}</Label>
+        <TabsContent value="settings" className="space-y-4">
+          <Panel id="set-store" title="معلومات المتجر" desc="الاسم والشعار والنبذة التعريفية">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[
+                { key: "store_name_ar", label: "اسم المتجر (عربي)" },
+                { key: "store_name_en", label: "اسم المتجر (إنكليزي)" },
+              ].map((f) => (
+                <div key={f.key} className="space-y-2">
+                  <Label>{f.label}</Label>
+                  <Input
+                    defaultValue={settings.data?.[f.key] ?? ""}
+                    onChange={(e) => setStore({ ...store, [f.key]: e.target.value })}
+                  />
+                </div>
+              ))}
+              <FileField
+                label="شعار المتجر"
+                accept="image/*"
+                folder="branding"
+                value={store["logo_url"] ?? settings.data?.["logo_url"] ?? ""}
+                onChange={(url) => setStore({ ...store, logo_url: url })}
+              />
+              <div className="space-y-2">
+                <Label>ساعات العمل</Label>
                 <Input
-                  defaultValue={settings.data?.[f.key] ?? ""}
-                  onChange={(e) => setStore({ ...store, [f.key]: e.target.value })}
+                  defaultValue={settings.data?.["working_hours"] ?? ""}
+                  placeholder="السبت - الخميس، 9 صباحاً - 9 مساءً"
+                  onChange={(e) => setStore({ ...store, working_hours: e.target.value })}
                 />
               </div>
-            ))}
-            <FileField
-              label="شعار المتجر"
-              accept="image/*"
-              folder="branding"
-              value={store["logo_url"] ?? settings.data?.["logo_url"] ?? ""}
-              onChange={(url) => setStore({ ...store, logo_url: url })}
-            />
-            <Button
-              className="sm:col-span-2"
-              onClick={async () => {
-                const rows = Object.entries(store).map(([key, value]) => ({ key, value }));
-                if (rows.length === 0) return;
-                const { error } = await supabase.from("store_settings").upsert(rows);
-                if (error) toast.error(error.message);
-                else {
-                  invalidate(["store_settings"]);
-                  toast.success("تم الحفظ");
-                }
-              }}
-            >
-              حفظ الإعدادات
-            </Button>
-          </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>نبذة عن المتجر (عربي)</Label>
+                <Textarea
+                  rows={3}
+                  defaultValue={settings.data?.["store_about_ar"] ?? ""}
+                  onChange={(e) => setStore({ ...store, store_about_ar: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>نبذة عن المتجر (إنكليزي)</Label>
+                <Textarea
+                  rows={3}
+                  defaultValue={settings.data?.["store_about_en"] ?? ""}
+                  onChange={(e) => setStore({ ...store, store_about_en: e.target.value })}
+                />
+              </div>
+            </div>
+          </Panel>
+
+          <Panel id="set-contact" title="تفاصيل التواصل" desc="أرقام الهاتف والعنوان وروابط التواصل">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[
+                { key: "support_whatsapp", label: "رقم واتساب الدعم", ltr: true },
+                { key: "store_phone", label: "رقم الهاتف", ltr: true },
+                { key: "store_email", label: "البريد الإلكتروني", ltr: true },
+                { key: "store_address", label: "عنوان المتجر" },
+                { key: "facebook_url", label: "رابط فيسبوك", ltr: true },
+                { key: "instagram_url", label: "رابط إنستغرام", ltr: true },
+                { key: "telegram_chat_id", label: "معرّف محادثة تيليجرام للإشعارات", ltr: true },
+              ].map((f) => (
+                <div key={f.key} className="space-y-2">
+                  <Label>{f.label}</Label>
+                  <Input
+                    dir={f.ltr ? "ltr" : undefined}
+                    defaultValue={settings.data?.[f.key] ?? ""}
+                    onChange={(e) => setStore({ ...store, [f.key]: e.target.value })}
+                  />
+                </div>
+              ))}
+            </div>
+          </Panel>
+
+          <Button
+            className="w-full"
+            disabled={Object.keys(store).length === 0}
+            onClick={async () => {
+              const rows = Object.entries(store).map(([key, value]) => ({ key, value }));
+              if (rows.length === 0) return;
+              const { error } = await supabase.from("store_settings").upsert(rows);
+              if (error) toast.error(error.message);
+              else {
+                invalidate(["store_settings"]);
+                toast.success("تم الحفظ");
+              }
+            }}
+          >
+            حفظ الإعدادات
+          </Button>
         </TabsContent>
+        </div>
       </Tabs>
     </div>
+
   );
 }
