@@ -65,6 +65,11 @@ function SearchPage() {
   const allCats = categories.data ?? [];
   const category = cat ?? "all";
   const activeCat = allCats.find((c) => c.id === category);
+  const parentCat = activeCat?.parent_id
+    ? allCats.find((c) => c.id === activeCat.parent_id)
+    : undefined;
+  const subCats = activeCat ? allCats.filter((c) => c.parent_id === activeCat.id) : [];
+
   const catIds =
     category === "all"
       ? null
