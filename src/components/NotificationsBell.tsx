@@ -24,17 +24,33 @@ type Notif = {
   created_at: string;
 };
 
-/** Shows a device notification when the browser allows it. */
-function pushToDevice(title: string, body: string): void {
+/**
+ * Shows a real device notification (system tray) through the service worker,
+ * falling back to the in-page Notification API when no worker is available.
+ */
+async function pushToDevice(title: string, body: string): Promise<void> {
   if (typeof window === "undefined" || !("Notification" in window)) return;
-  if (Notification.permission === "granted") {
-    try {
-      new Notification(title, { body, icon: "/favicon.ico" });
-    } catch {
-      /* some browsers require a service worker — silently ignore */
+  if (Notification.permission !== "granted") return;
+  try {
+    if ("serviceWorker" in navigator) {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification(title, {
+        body,
+        icon: "/icon-192.png",
+        badge: "/icon-192.png",
+        dir: "rtl",
+        lang: "ar",
+        tag: `notif-${Date.now()}`,
+        data: { url: "/orders" },
+      });
+      return;
     }
+    new Notification(title, { body, icon: "/icon-192.png" });
+  } catch {
+    /* some browsers restrict notifications — silently ignore */
   }
 }
+
 
 export function NotificationsBell() {
   const { user } = useAuth();
