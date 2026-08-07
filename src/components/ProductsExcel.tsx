@@ -3,6 +3,8 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
+import { downloadWorkbook } from "@/lib/xlsx-download";
+
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
@@ -67,7 +69,7 @@ function buildSheet(rows: Record<string, unknown>[]) {
 function download(ws: XLSX.WorkSheet, filename: string) {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "products");
-  XLSX.writeFile(wb, filename);
+  downloadWorkbook(wb, filename);
 }
 
 function truthy(v: unknown) {
@@ -119,7 +121,7 @@ export function ProductsExcel({
     ]);
     guide["!cols"] = [{ wch: 30 }, { wch: 30 }];
     XLSX.utils.book_append_sheet(wb, guide, "categories");
-    XLSX.writeFile(wb, "smarttech-products-template.xlsx");
+    downloadWorkbook(wb, "smarttech-products-template.xlsx");
   };
 
   const exportCurrent = () => {

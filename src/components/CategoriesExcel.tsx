@@ -3,6 +3,8 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
+import { downloadWorkbook } from "@/lib/xlsx-download";
+
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
@@ -47,7 +49,7 @@ export function CategoriesExcel({
       ]),
       "categories",
     );
-    XLSX.writeFile(wb, "smarttech-categories-template.xlsx");
+    downloadWorkbook(wb, "smarttech-categories-template.xlsx");
   };
 
   const exportCurrent = () => {
@@ -61,7 +63,7 @@ export function CategoriesExcel({
     ws["!cols"] = HEADERS.map(() => ({ wch: 30 }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "categories");
-    XLSX.writeFile(wb, "smarttech-categories.xlsx");
+    downloadWorkbook(wb, "smarttech-categories.xlsx");
   };
 
   const handleFile = async (file: File) => {
