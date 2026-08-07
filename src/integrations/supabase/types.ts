@@ -375,6 +375,7 @@ export type Database = {
       }
       solar_components: {
         Row: {
+          brand: string
           capacity: number
           created_at: string
           id: string
@@ -384,9 +385,11 @@ export type Database = {
           name_en: string
           price: number
           sort_order: number
+          tier: string
           voltage: number
         }
         Insert: {
+          brand?: string
           capacity?: number
           created_at?: string
           id?: string
@@ -396,9 +399,11 @@ export type Database = {
           name_en?: string
           price?: number
           sort_order?: number
+          tier?: string
           voltage?: number
         }
         Update: {
+          brand?: string
           capacity?: number
           created_at?: string
           id?: string
@@ -408,6 +413,7 @@ export type Database = {
           name_en?: string
           price?: number
           sort_order?: number
+          tier?: string
           voltage?: number
         }
         Relationships: []
