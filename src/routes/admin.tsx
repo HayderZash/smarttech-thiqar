@@ -1732,30 +1732,16 @@ function AdminPage() {
 
           <Panel
             id="set-pricing"
-            title="زيادة الأسعار"
-            desc="نسبة مئوية تُضاف على كل الأسعار مع التقريب لأقرب 250 دينار"
+            title="قواعد التسعير الديناميكي"
+            desc="شرائح حسب السعر: نسبة أعلى للأسعار المنخفضة وأقل للمرتفعة، مع التقريب لأقرب 250 دينار"
           >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>نسبة الزيادة (%)</Label>
-                <NumberField
-                  aria-label="نسبة الزيادة"
-                  value={
-                    store["price_markup_percent"] !== undefined
-                      ? Number(store["price_markup_percent"]) || 0
-                      : Number(settings.data?.["price_markup_percent"] ?? 0) || 0
-                  }
-                  onValueChange={(v) =>
-                    setStore({ ...store, price_markup_percent: String(v ?? 0) })
-                  }
-                />
-                <p className="text-xs text-muted-foreground">
-                  مثال: منتج بعد الزيادة 3320 د.ع ← 3250 د.ع، و3400 د.ع ← 3500 د.ع. الأسعار
-                  المنخفضة التي لا تتأثر بالتقريب تبقى كما هي.
-                </p>
-              </div>
-            </div>
+            <PricingTiersEditor
+              initialValue={settings.data?.["price_tiers"]}
+              legacyPercent={Number(settings.data?.["price_markup_percent"] ?? 0) || 0}
+              onChange={(json) => setStore((s) => ({ ...s, price_tiers: json }))}
+            />
           </Panel>
+
 
           <CropSettingsPanel />
 
