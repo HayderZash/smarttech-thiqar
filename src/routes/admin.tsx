@@ -53,7 +53,9 @@ import {
   productsQuery,
   settingsQuery,
   stockAlertsQuery,
+  type Product,
 } from "@/lib/queries";
+
 
 
 export const Route = createFileRoute("/admin")({
