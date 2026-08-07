@@ -627,11 +627,14 @@ function AdminPage() {
               </div>
             ))}
           </div>
+          </Panel>
         </TabsContent>
 
         {/* CATEGORIES */}
         <TabsContent value="categories" className="space-y-4">
-          <div className="grid gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-2">
+          <Panel id="cat-new" title="إضافة قسم" desc="أنشئ قسماً رئيسياً أو فرعياً">
+          <div className="grid gap-4 sm:grid-cols-2">
+
             <div className="space-y-2">
               <Label>الاسم بالعربية</Label>
               <Input value={cform.name_ar} onChange={(e) => setCform({ ...cform, name_ar: e.target.value })} />
