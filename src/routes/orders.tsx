@@ -80,7 +80,22 @@ function OrdersPage() {
   const { data, isLoading } = useQuery(myOrdersQuery(user?.id));
   const queryClient = useQueryClient();
   const cancel = useServerFn(cancelOrder);
+  const resolve = useServerFn(resolveOrderIssue);
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  const onResolve = async (id: string, action: "continue" | "change"): Promise<void> => {
+    setBusyId(id);
+    try {
+      await resolve({ data: { order_id: id, action } });
+      await queryClient.invalidateQueries({ queryKey: ["orders"] });
+      toast.success(t("actionSaved"));
+    } catch {
+      toast.error(t("error"));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
 
   const onCancel = async (id: string): Promise<void> => {
     if (!window.confirm(t("cancelOrderConfirm"))) return;
