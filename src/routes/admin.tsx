@@ -263,20 +263,64 @@ function AdminPage() {
   const lowStock = (products.data ?? []).filter((p) => p.stock_qty <= 2);
 
   const needle = q.trim().toLowerCase();
-  const visibleOrders = needle
-    ? allOrders.filter((o) =>
-        [o["order_number"], o["customer_name"], o["phone"], o["governorate_name"]]
-          .join(" ")
-          .toLowerCase()
-          .includes(needle),
-      )
-    : allOrders;
   const allProducts = products.data ?? [];
-  const visibleProducts = needle
-    ? allProducts.filter((p) =>
-        [p.name_ar, p.name_en, p.sku].join(" ").toLowerCase().includes(needle),
-      )
-    : allProducts;
+
+  const matchOrder = (o: Record<string, any>) =>
+    !needle ||
+    [o["order_number"], o["customer_name"], o["phone"], o["governorate_name"]]
+      .join(" ")
+      .toLowerCase()
+      .includes(needle);
+
+  const visibleOrders =
+    scope === "products"
+      ? []
+      : allOrders.filter(
+          (o) => matchOrder(o) && (statusFilter === "all" || o["status"] === statusFilter),
+        );
+
+  const visibleProducts =
+    scope === "orders"
+      ? []
+      : allProducts.filter(
+          (p) => !needle || [p.name_ar, p.name_en, p.sku].join(" ").toLowerCase().includes(needle),
+        );
+
+  const searchActive = !!needle || scope !== "all" || statusFilter !== "all";
+
+  // --- quick stats -------------------------------------------------------
+  const now = Date.now();
+  const newOrders24h = allOrders.filter(
+    (o) => now - new Date(o["created_at"]).getTime() < 24 * 3600 * 1000,
+  ).length;
+  const statusCounts = [...ORDER_STATUSES, "cancelled"].map((s) => ({
+    key: s,
+    label: statusLabel(s, lang),
+    count: allOrders.filter((o) => o["status"] === s).length,
+  }));
+  const maxStatus = Math.max(1, ...statusCounts.map((s) => s.count));
+
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now - (6 - i) * 24 * 3600 * 1000);
+    const key = d.toISOString().slice(0, 10);
+    const total = allOrders
+      .filter((o) => o["status"] !== "cancelled" && String(o["created_at"]).slice(0, 10) === key)
+      .reduce((s, o) => s + Number(o["total_amount"]), 0);
+    return { key, label: d.toLocaleDateString("ar-IQ", { weekday: "short" }), total };
+  });
+  const maxDay = Math.max(1, ...days.map((d) => d.total));
+
+  const outOfStock = allProducts.filter((p) => p.stock_qty <= 0).length;
+  const lowStockCount = allProducts.filter((p) => p.stock_qty > 0 && p.stock_qty <= 2).length;
+  const inStock = allProducts.length - outOfStock - lowStockCount;
+  const stockBars = [
+    { label: "متوفر", count: inStock, cls: "bg-primary" },
+    { label: "منخفض", count: lowStockCount, cls: "bg-amber-500" },
+    { label: "نافد", count: outOfStock, cls: "bg-destructive" },
+  ];
+  const stockTotal = Math.max(1, allProducts.length);
+
+
 
   const sections = [
     { value: "orders", label: "الطلبات", desc: "متابعة الطلبات وتحديث حالتها", icon: ClipboardList },
