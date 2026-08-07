@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 
+import storeLogo from "@/assets/smarttech-logo.png.asset.json";
 import { settingsQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
+
 
 export type CropSettings = { zoom: number; x: number; y: number };
 
