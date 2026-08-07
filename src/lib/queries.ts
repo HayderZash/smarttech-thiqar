@@ -58,8 +58,12 @@ export const productsQuery = queryOptions({
     const { data: settingRows } = await supabase
       .from("store_settings")
       .select("key, value")
-      .eq("key", "price_markup_percent");
-    const markup = Number(settingRows?.[0]?.value ?? 0) || 0;
+      .in("key", ["price_tiers", "price_markup_percent"]);
+    const map = Object.fromEntries((settingRows ?? []).map((r) => [r.key, r.value]));
+    const tiers = parsePriceTiers(
+      map["price_tiers"],
+      Number(map["price_markup_percent"] ?? 0) || 0,
+    );
 
     // PostgREST caps a single response at 1000 rows — page through everything.
     const all: Product[] = [];
@@ -77,9 +81,9 @@ export const productsQuery = queryOptions({
           ...p,
           base_price: Number(p.price) || 0,
           base_discount_price: p.discount_price === null ? null : Number(p.discount_price),
-          price: applyMarkup(Number(p.price) || 0, markup),
+          price: applyPricing(Number(p.price) || 0, tiers),
           discount_price:
-            p.discount_price === null ? null : applyMarkup(Number(p.discount_price), markup),
+            p.discount_price === null ? null : applyPricing(Number(p.discount_price), tiers),
         })),
       );
       if (rows.length < PAGE) break;
