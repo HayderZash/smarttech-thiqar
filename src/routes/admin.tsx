@@ -78,34 +78,74 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-/** Shrinks big images in the browser so uploads don't fail on slow/large payloads. */
-async function compressImage(file: File, max = 1024): Promise<File> {
-  if (!file.type.startsWith("image/") || file.type === "image/svg+xml") return file;
-  if (file.size < 300 * 1024) return file;
+/** Decodes a file to a bitmap-ish source, with a Safari-friendly fallback. */
+async function decodeImage(file: File): Promise<{ width: number; height: number; src: CanvasImageSource } | null> {
   try {
     const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+    return { width: bitmap.width, height: bitmap.height, src: bitmap };
+  } catch {
+    try {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.decoding = "async";
+      await new Promise<void>((res, rej) => {
+        img.onload = () => res();
+        img.onerror = () => rej(new Error("decode"));
+        img.src = url;
+      });
+      URL.revokeObjectURL(url);
+      return { width: img.naturalWidth, height: img.naturalHeight, src: img };
+    } catch {
+      return null;
+    }
+  }
+}
+
+/** Shrinks big images in the browser so uploads don't fail on slow/large payloads. */
+async function compressImage(file: File, max = 1600, target = 700 * 1024): Promise<File> {
+  if (!file.type.startsWith("image/") || file.type === "image/svg+xml") return file;
+  if (file.size <= 120 * 1024) return file;
+  const decoded = await decodeImage(file);
+  if (!decoded) return file;
+  let width = decoded.width;
+  let height = decoded.height;
+  const scale = Math.min(1, max / Math.max(width, height));
+  width = Math.max(1, Math.round(width * scale));
+  height = Math.max(1, Math.round(height * scale));
+
+  for (let step = 0; step < 5; step++) {
     const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext("2d");
     if (!ctx) return file;
-    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/webp", 0.85));
-    if (!blob || blob.size >= file.size) return file;
-    return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.webp`, { type: "image/webp" });
-  } catch {
-    return file;
+    ctx.drawImage(decoded.src, 0, 0, width, height);
+    const blob = await new Promise<Blob | null>((res) =>
+      canvas.toBlob(res, "image/webp", 0.85 - step * 0.12),
+    );
+    if (!blob) return file;
+    if (blob.size <= target || step === 4) {
+      if (blob.size >= file.size) return file;
+      return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.webp`, { type: "image/webp" });
+    }
+    width = Math.max(1, Math.round(width * 0.8));
+    height = Math.max(1, Math.round(height * 0.8));
   }
+  return file;
 }
 
 /** Uploads to the private store-media bucket and returns a long-lived signed URL. */
 async function uploadMedia(input: File, folder: string) {
   const file = await compressImage(input);
+  if (file.size > 8 * 1024 * 1024) {
+    throw new Error("حجم الملف كبير جداً (الحد 8 ميغابايت) — يرجى اختيار ملف أصغر");
+  }
   const path = `${folder}/${crypto.randomUUID()}-${file.name.replace(/[^\w.-]/g, "_")}`;
   let lastErr: unknown;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
+      // Refresh the session first: an expired token makes the upload fail as a network error.
+      if (attempt > 0) await supabase.auth.refreshSession();
       const { error } = await supabase.storage
         .from("store-media")
         .upload(path, file, { upsert: true, contentType: file.type || "application/octet-stream" });
@@ -117,11 +157,16 @@ async function uploadMedia(input: File, folder: string) {
       return data.signedUrl;
     } catch (err) {
       lastErr = err;
-      await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+      await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
     }
+  }
+  const msg = lastErr instanceof Error ? lastErr.message : "";
+  if (/failed to fetch|network/i.test(msg)) {
+    throw new Error("تعذّر الاتصال أثناء الرفع — تحقق من الإنترنت أو جرّب صورة أصغر");
   }
   throw lastErr instanceof Error ? lastErr : new Error("فشل رفع الملف");
 }
+
 
 
 function FileField({
