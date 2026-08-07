@@ -228,7 +228,11 @@ function CartPage() {
             maxLength={20}
             placeholder="07XXXXXXXXX"
           />
+          <p className="rounded-xl bg-sand p-2.5 text-xs leading-relaxed text-muted-foreground">
+            {t("whatsappNote")}
+          </p>
         </div>
+
 
         <div className="space-y-2">
           <Label>{t("governorate")}</Label>
