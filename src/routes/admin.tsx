@@ -1,6 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Trash2, Upload } from "lucide-react";
+import {
+  ClipboardList,
+  Image as ImageIcon,
+  LayoutGrid,
+  Package,
+  Plus,
+  Settings,
+  Ticket,
+  Trash2,
+  Truck,
+  Upload,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
