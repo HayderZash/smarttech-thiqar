@@ -6,7 +6,9 @@ import {
   Image as ImageIcon,
   LayoutGrid,
   Package,
+  Pencil,
   Plus,
+
   Search,
   Settings,
   Star,
