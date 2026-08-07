@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus, RotateCcw, Settings2, Sun, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -12,20 +13,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useLang } from "@/lib/i18n";
+import { formatIQD } from "@/lib/format";
+import { localized, useLang } from "@/lib/i18n";
+import { solarComponentsQuery, type SolarComponent } from "@/lib/queries";
+import { cn } from "@/lib/utils";
 
 type Device = { id: number; name: string; watt: number; qty: number; hours: number };
-type BatteryType = "lead" | "agm" | "lithium" | "custom";
 
-const DOD: Record<Exclude<BatteryType, "custom">, number> = { lead: 50, agm: 60, lithium: 90 };
+/** LiFePO4 usable depth of discharge. */
+const DOD = 0.9;
+const AC_VOLT = 220;
 
 const DEFAULTS = {
   panelWatt: 550,
   sunHours: 4.5,
   batteryAh: 200,
-  batteryVolt: 12,
-  dod: 50,
-  autonomy: 1,
+  batteryVolt: 51.2,
 };
 
 export const Route = createFileRoute("/solar")({
@@ -59,6 +62,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function SolarPage() {
   const { t, lang } = useLang();
   const ar = lang === "ar";
+  const components = useQuery(solarComponentsQuery);
 
   const [mode, setMode] = useState<"loads" | "amps">("loads");
   const [devices, setDevices] = useState<Device[]>([
@@ -68,58 +72,75 @@ function SolarPage() {
 
   // fixed amperage mode
   const [amps, setAmps] = useState(20);
-  const [acVolt, setAcVolt] = useState(220);
-  const [pf, setPf] = useState(0.9);
   const [ampHours, setAmpHours] = useState(6);
 
   // system settings
   const [panelWatt, setPanelWatt] = useState(DEFAULTS.panelWatt);
   const [sunHours, setSunHours] = useState(DEFAULTS.sunHours);
-  const [batteryType, setBatteryType] = useState<BatteryType>("lead");
   const [batteryAh, setBatteryAh] = useState(DEFAULTS.batteryAh);
   const [batteryVolt, setBatteryVolt] = useState(DEFAULTS.batteryVolt);
-  const [dod, setDod] = useState(DEFAULTS.dod);
-  const [autonomy, setAutonomy] = useState(DEFAULTS.autonomy);
   const [inverterMode, setInverterMode] = useState<"auto" | "manual">("auto");
   const [inverterManual, setInverterManual] = useState(5);
+
+  const [picked, setPicked] = useState<Record<string, string>>({});
 
   const update = (id: number, patch: Partial<Device>) =>
     setDevices((list) => list.map((d) => (d.id === id ? { ...d, ...patch } : d)));
 
-  const setBattery = (type: BatteryType) => {
-    setBatteryType(type);
-    if (type !== "custom") setDod(DOD[type]);
-    if (type === "lithium") setBatteryVolt(51.2);
-    else if (batteryVolt === 51.2) setBatteryVolt(12);
-  };
-
   const resetDefaults = () => {
     setPanelWatt(DEFAULTS.panelWatt);
     setSunHours(DEFAULTS.sunHours);
-    setBatteryType("lead");
     setBatteryAh(DEFAULTS.batteryAh);
     setBatteryVolt(DEFAULTS.batteryVolt);
-    setDod(DEFAULTS.dod);
-    setAutonomy(DEFAULTS.autonomy);
     setInverterMode("auto");
   };
 
   const peakW =
-    mode === "loads"
-      ? devices.reduce((s, d) => s + d.watt * d.qty, 0)
-      : amps * acVolt * pf;
+    mode === "loads" ? devices.reduce((s, d) => s + d.watt * d.qty, 0) : amps * AC_VOLT;
   const dailyWh =
-    mode === "loads"
-      ? devices.reduce((s, d) => s + d.watt * d.qty * d.hours, 0)
-      : peakW * ampHours;
+    mode === "loads" ? devices.reduce((s, d) => s + d.watt * d.qty * d.hours, 0) : peakW * ampHours;
 
   const panelDen = (panelWatt || 1) * (sunHours || 1) * 0.8;
   const panels = Math.ceil(dailyWh / panelDen) || 0;
-  const battWh = (batteryAh || 1) * (batteryVolt || 1) * ((dod || 50) / 100);
-  const batteries = Math.ceil((dailyWh * (autonomy || 1)) / battWh) || 0;
+  const battWh = (batteryAh || 1) * (batteryVolt || 1) * DOD;
+  const batteries = Math.ceil(dailyWh / battWh) || 0;
   const autoInverterKw = Math.max(1, Math.ceil((peakW * 1.3) / 1000));
   const inverterKw = inverterMode === "auto" ? autoInverterKw : inverterManual || 0;
   const inverterOk = inverterKw * 1000 >= peakW * 1.1;
+
+  // ---- catalog suggestions -------------------------------------------------
+  const all = components.data ?? [];
+  const qtyFor = (c: SolarComponent) => {
+    if (c.kind === "panel") {
+      const den = (c.capacity || 1) * (sunHours || 1) * 0.8;
+      return Math.max(1, Math.ceil(dailyWh / den) || 1);
+    }
+    if (c.kind === "battery") {
+      const wh = (c.capacity || 1) * (c.voltage || 12) * DOD;
+      return Math.max(1, Math.ceil(dailyWh / wh) || 1);
+    }
+    return Math.max(1, Math.ceil((peakW * 1.3) / 1000 / (c.capacity || 1)) || 1);
+  };
+
+  const groups = (["panel", "battery", "inverter"] as const).map((kind) => {
+    const items = all
+      .filter((c) => c.kind === kind)
+      .map((c) => {
+        const qty = qtyFor(c);
+        return { c, qty, cost: qty * Number(c.price) };
+      })
+      .sort((a, b) => a.cost - b.cost);
+    const selected = items.find((i) => i.c.id === picked[kind]) ?? items[0];
+    return { kind, items, selected };
+  });
+
+  const total = groups.reduce((s, g) => s + (g.selected?.cost ?? 0), 0);
+  const hasCatalog = groups.some((g) => g.items.length > 0);
+  const groupLabel: Record<string, string> = {
+    panel: t("panelsGroup"),
+    battery: t("batteriesGroup"),
+    inverter: t("invertersGroup"),
+  };
 
   return (
     <div className="mx-auto max-w-3xl pb-6">
@@ -196,15 +217,9 @@ function SolarPage() {
           </Button>
         </div>
       ) : (
-        <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl border bg-card p-3 sm:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl border bg-card p-3">
           <Field label={t("ampsLabel")}>
             <NumberField value={amps} onValueChange={(v) => setAmps(v ?? 0)} />
-          </Field>
-          <Field label={t("voltageLabel")}>
-            <NumberField value={acVolt} onValueChange={(v) => setAcVolt(v ?? 0)} />
-          </Field>
-          <Field label={t("powerFactor")}>
-            <NumberField value={pf} onValueChange={(v) => setPf(v ?? 1)} />
           </Field>
           <Field label={t("hoursPerDay")}>
             <NumberField value={ampHours} onValueChange={(v) => setAmpHours(v ?? 0)} />
@@ -232,38 +247,11 @@ function SolarPage() {
           <Field label={t("sunHours")}>
             <NumberField value={sunHours} onValueChange={(v) => setSunHours(v ?? 0)} />
           </Field>
-          <div className="col-span-2">
-            <Field label={t("batteryType")}>
-              <Select value={batteryType} onValueChange={(v) => setBattery(v as BatteryType)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="lead">{t("batteryLead")}</SelectItem>
-                  <SelectItem value="agm">{t("batteryAgm")}</SelectItem>
-                  <SelectItem value="lithium">{t("batteryLithium")}</SelectItem>
-                  <SelectItem value="custom">{t("batteryCustom")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
           <Field label={t("batteryAh")}>
             <NumberField value={batteryAh} onValueChange={(v) => setBatteryAh(v ?? 0)} />
           </Field>
           <Field label={t("batteryVolt")}>
             <NumberField value={batteryVolt} onValueChange={(v) => setBatteryVolt(v ?? 0)} />
-          </Field>
-          <Field label={t("dodLabel")}>
-            <NumberField
-              value={dod}
-              onValueChange={(v) => {
-                setDod(v ?? 0);
-                setBatteryType("custom");
-              }}
-            />
-          </Field>
-          <Field label={t("autonomyDays")}>
-            <NumberField value={autonomy} onValueChange={(v) => setAutonomy(v ?? 1)} />
           </Field>
 
           <div className="col-span-2">
@@ -284,13 +272,11 @@ function SolarPage() {
           </div>
           {inverterMode === "manual" && (
             <Field label={t("inverterManual")}>
-              <NumberField
-                value={inverterManual}
-                onValueChange={(v) => setInverterManual(v ?? 0)}
-              />
+              <NumberField value={inverterManual} onValueChange={(v) => setInverterManual(v ?? 0)} />
             </Field>
           )}
         </div>
+        <p className="mt-3 text-[11px] text-muted-foreground">{t("batteryLifepo4")}</p>
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
@@ -313,12 +299,68 @@ function SolarPage() {
         ))}
       </div>
 
-      <p
-        className={`mt-3 text-xs font-medium ${inverterOk ? "text-primary" : "text-destructive"}`}
-      >
+      <p className={`mt-3 text-xs font-medium ${inverterOk ? "text-primary" : "text-destructive"}`}>
         {inverterOk ? t("inverterOk") : t("inverterLow")}
       </p>
-      <p className="mt-1 text-xs text-muted-foreground">{t("solarNote")}</p>
+
+      {/* catalog suggestions */}
+      <section className="mt-6 rounded-2xl border bg-card p-4">
+        <h2 className="text-sm font-bold">{t("suggestedSystem")}</h2>
+        <p className="text-xs text-muted-foreground">{t("suggestedDesc")}</p>
+
+        {!hasCatalog ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">{t("noSolarComponents")}</p>
+        ) : (
+          <div className="mt-4 space-y-5">
+            {groups.map((g) =>
+              g.items.length === 0 ? null : (
+                <div key={g.kind} className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    {groupLabel[g.kind]}
+                  </p>
+                  {g.items.map((i) => (
+                    <button
+                      key={i.c.id}
+                      type="button"
+                      onClick={() => setPicked((p) => ({ ...p, [g.kind]: i.c.id }))}
+                      className={cn(
+                        "grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border p-3 text-start transition",
+                        g.selected?.c.id === i.c.id
+                          ? "border-primary bg-primary/5"
+                          : "hover:bg-muted/50",
+                      )}
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold">
+                          {localized(i.c, "name", lang)}
+                        </span>
+                        <span className="block text-[11px] text-muted-foreground" dir="ltr">
+                          {formatIQD(Number(i.c.price), lang)} ×{i.qty}
+                        </span>
+                      </span>
+                      <span className="text-end">
+                        <span className="block text-[11px] text-muted-foreground">
+                          {t("qtyNeeded")}: {i.qty}
+                        </span>
+                        <span className="block text-sm font-bold text-primary">
+                          {formatIQD(i.cost, lang)}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ),
+            )}
+
+            <div className="flex items-center justify-between rounded-xl bg-sand p-4">
+              <span className="text-sm font-semibold">{t("totalCost")}</span>
+              <span className="text-lg font-extrabold text-primary">{formatIQD(total, lang)}</span>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <p className="mt-3 text-xs text-muted-foreground">{t("solarNote")}</p>
     </div>
   );
 }
