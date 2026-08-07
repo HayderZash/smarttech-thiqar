@@ -267,7 +267,7 @@ function CartPage() {
             <a
               href={`https://wa.me/?text=${encodeURIComponent(
                 items
-                  .map((i) => `- ${localized(lang, i.name_ar, i.name_en)} x${i.qty}`)
+                  .map((i) => `- ${localized(lang, i.name_ar, i.name_en)} x${i.quantity}`)
                   .join("\n") + `\n${t("total")}: ${formatIQD(total, lang)}`,
               )}`}
               target="_blank"
