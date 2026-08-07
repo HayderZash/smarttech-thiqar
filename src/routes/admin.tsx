@@ -220,6 +220,8 @@ function AdminPage() {
   const [store, setStore] = useState<Record<string, string>>({});
   const [tab, setTab] = useState("orders");
   const [q, setQ] = useState("");
+  const [scope, setScope] = useState<"all" | "products" | "orders">("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
     const stored = localStorage.getItem("admin_tab");
