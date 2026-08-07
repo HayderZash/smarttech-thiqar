@@ -42,6 +42,7 @@ import { localized, useLang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
   allReviewsQuery,
+  allSolarComponentsQuery,
   bannersQuery,
   categoriesQuery,
   governoratesQuery,
