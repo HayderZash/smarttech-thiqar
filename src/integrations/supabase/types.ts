@@ -100,6 +100,7 @@ export type Database = {
           created_at: string
           discount_type: string
           discount_value: number
+          expires_at: string | null
           id: string
           is_active: boolean
         }
@@ -108,6 +109,7 @@ export type Database = {
           created_at?: string
           discount_type?: string
           discount_value?: number
+          expires_at?: string | null
           id?: string
           is_active?: boolean
         }
@@ -116,6 +118,7 @@ export type Database = {
           created_at?: string
           discount_type?: string
           discount_value?: number
+          expires_at?: string | null
           id?: string
           is_active?: boolean
         }
