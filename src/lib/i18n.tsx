@@ -200,6 +200,26 @@ const dict = {
   unitPriceLabel: { ar: "سعر الوحدة", en: "Unit price" },
   lineTotal: { ar: "الإجمالي", en: "Total" },
 
+  // whatsapp / cancel / first order
+  whatsappNote: {
+    ar: "يرجى إدخال رقم يعمل عليه واتساب، قد نتواصل معك لتأكيد الطلب أو التبليغ عن منتج.",
+    en: "Please enter a number with WhatsApp — we may contact you to confirm your order or notify you about an item.",
+  },
+  cancelOrder: { ar: "إلغاء الطلب", en: "Cancel order" },
+  cancelOrderConfirm: { ar: "هل تريد إلغاء هذا الطلب؟", en: "Cancel this order?" },
+  orderCancelled: { ar: "تم إلغاء الطلب", en: "Order cancelled" },
+  cannotCancel: {
+    ar: "لا يمكن الإلغاء بعد بدء التجهيز",
+    en: "Cannot cancel after preparation starts",
+  },
+  firstOrderNote: {
+    ar: "احصل على خصم 5% عند التسجيل لأول مرة، يُطبَّق تلقائياً على أول طلب فقط.",
+    en: "Get 5% off when you register for the first time — applied automatically to your first order only.",
+  },
+  firstOrderDiscount: { ar: "خصم أول طلب (5%)", en: "First order discount (5%)" },
+
+
+
 
   // misc
   currency: { ar: "د.ع", en: "IQD" },
