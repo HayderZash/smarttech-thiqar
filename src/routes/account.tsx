@@ -151,7 +151,11 @@ function AccountPage() {
               onChange={(e) => setPhone(e.target.value)}
               maxLength={20}
             />
+            <p className="rounded-xl bg-sand p-2.5 text-xs leading-relaxed text-muted-foreground">
+              {t("whatsappNote")}
+            </p>
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="password">{t("password")}</Label>
             <Input
