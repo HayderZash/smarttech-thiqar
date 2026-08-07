@@ -1,13 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Copy, Tag } from "lucide-react";
-import { toast } from "sonner";
 
 import { ProductCard } from "@/components/ProductCard";
-import { Button } from "@/components/ui/button";
-import { discountPercent, formatIQD } from "@/lib/format";
+import { discountPercent } from "@/lib/format";
 import { useLang } from "@/lib/i18n";
-import { couponsQuery, productsQuery } from "@/lib/queries";
+import { productsQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/deals")({
   head: () => ({
@@ -27,9 +24,8 @@ export const Route = createFileRoute("/deals")({
 });
 
 function DealsPage() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const { data: products } = useQuery(productsQuery);
-  const { data: coupons } = useQuery(couponsQuery);
 
   const deals = (products ?? [])
     .filter((p) => discountPercent(p) > 0)
@@ -39,42 +35,6 @@ function DealsPage() {
     <div>
       <h1 className="text-xl font-bold">{t("dealsPage")}</h1>
       <p className="mt-1 text-sm text-muted-foreground">{t("dealsDesc")}</p>
-
-      {(coupons ?? []).length > 0 && (
-        <section className="mt-4">
-          <h2 className="mb-2 text-sm font-semibold">{t("activeCoupons")}</h2>
-          <div className="flex flex-wrap gap-2">
-            {(coupons ?? []).map((c) => (
-              <div
-                key={c.id}
-                className="flex items-center gap-2 rounded-2xl border border-dashed bg-sand px-3 py-2"
-              >
-                <Tag className="size-4 text-primary" />
-                <span className="font-mono text-sm font-bold" dir="ltr">
-                  {c.code}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {c.discount_type === "percent"
-                    ? `-${c.discount_value}%`
-                    : `- ${formatIQD(Number(c.discount_value), lang)}`}
-                </span>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="size-7 rounded-full"
-                  aria-label={t("copyCode")}
-                  onClick={() => {
-                    void navigator.clipboard.writeText(c.code);
-                    toast.success(t("copied"));
-                  }}
-                >
-                  <Copy className="size-3.5" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
       <section className="mt-6">
         {deals.length === 0 ? (
