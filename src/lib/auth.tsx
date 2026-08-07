@@ -37,11 +37,11 @@ export function isValidPhone(raw: string) {
   return d.length >= 10 && d.length <= 15;
 }
 
-/** Deterministic credentials derived from the phone number (phone-only sign-in). */
-export function credentialsForPhone(raw: string) {
-  const d = normalizePhone(raw);
-  return { email: `u${d}@store.local`, password: `sk-${d}-alnoor-store` };
+/** Deterministic internal email derived from the phone number (phone + password sign-in). */
+export function emailForPhone(raw: string) {
+  return `u${normalizePhone(raw)}@store.local`;
 }
+
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
