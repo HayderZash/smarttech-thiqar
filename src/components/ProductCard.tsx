@@ -66,8 +66,9 @@ export function ProductCard({ product }: { product: Product }) {
               src={product.image_url}
               alt={localized(lang, product.name_ar, product.name_en)}
               loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="h-full w-full scale-[1.18] object-cover object-center transition-transform duration-300 group-hover:scale-[1.26]"
             />
+
           ) : (
             <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
               {product.sku || "—"}

@@ -96,9 +96,10 @@ function ProductPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-3">
           <div className="relative overflow-hidden rounded-2xl border bg-sand">
-            <div className="aspect-square">
+            <div className="aspect-square overflow-hidden">
               {gallery[active] ? (
-                <img src={gallery[active]} alt={name} className="h-full w-full object-cover" />
+                <img src={gallery[active]} alt={name} className="h-full w-full scale-[1.18] object-cover object-center" />
+
               ) : (
                 <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
                   {product.sku}
