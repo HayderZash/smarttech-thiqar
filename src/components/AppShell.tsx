@@ -42,6 +42,7 @@ import { useLang } from "@/lib/i18n";
 import { settingsQuery } from "@/lib/queries";
 import { whatsappLink } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import smartTechLogo from "@/assets/smarttech-logo.png.asset.json";
 
 const NAV = [
   { to: "/", key: "home", icon: Home },
@@ -285,13 +286,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           <SideMenu settings={settings} storeName={storeName} isAdmin={isAdmin} pathname={pathname} />
 
           <Link to="/" className="flex shrink-0 items-center gap-2">
-            {settings?.["logo_url"] ? (
-              <img src={settings["logo_url"]} alt="" className="size-9 rounded-xl object-cover" />
-            ) : (
-              <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
-                ن
-              </span>
-            )}
+            <img
+              src={settings?.["logo_url"] || smartTechLogo.url}
+              alt="SmartTech"
+              className="size-9 rounded-xl object-contain"
+            />
             <span className="hidden text-base font-bold sm:block">
               {storeName || (lang === "ar" ? "SmartTech" : "SmartTech")}
             </span>
