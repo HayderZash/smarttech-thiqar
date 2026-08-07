@@ -119,6 +119,15 @@ function SearchPage() {
   const safePage = Math.min(page, totalPages);
   const pageItems = results.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
 
+  const catPath = (id: string | null) => {
+    if (!id) return generalLabel;
+    const c = allCats.find((x) => x.id === id);
+    if (!c) return generalLabel;
+    const parent = c.parent_id ? allCats.find((x) => x.id === c.parent_id) : undefined;
+    const name = localized(lang, c.name_ar, c.name_en);
+    return parent ? `${localized(lang, parent.name_ar, parent.name_en)} › ${name}` : name;
+  };
+
   return (
     <div>
       <Breadcrumb className="mb-3">
@@ -265,7 +274,7 @@ function SearchPage() {
           </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {pageItems.map((p) => (
-              <ProductCard key={p.id} product={p} />
+              <ProductCard key={p.id} product={p} categoryPath={catPath(p.category_id)} />
             ))}
           </div>
           <Pagination page={safePage} totalPages={totalPages} onPage={setPage} />
