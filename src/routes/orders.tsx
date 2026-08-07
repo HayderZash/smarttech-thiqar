@@ -78,6 +78,25 @@ function OrdersPage() {
   const { lang, t } = useLang();
   const { user, loading } = useAuth();
   const { data, isLoading } = useQuery(myOrdersQuery(user?.id));
+  const queryClient = useQueryClient();
+  const cancel = useServerFn(cancelOrder);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const onCancel = async (id: string): Promise<void> => {
+    if (!window.confirm(t("cancelOrderConfirm"))) return;
+    setBusyId(id);
+    try {
+      await cancel({ data: { order_id: id } });
+      await queryClient.invalidateQueries({ queryKey: ["orders"] });
+      toast.success(t("orderCancelled"));
+    } catch (err) {
+      const msg = err instanceof Error && err.message.includes("CANNOT_CANCEL") ? t("cannotCancel") : t("error");
+      toast.error(msg);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
 
   if (!loading && !user) {
     return (
