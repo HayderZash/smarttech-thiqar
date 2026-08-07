@@ -7,14 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { credentialsForPhone, isValidPhone, normalizePhone, useAuth } from "@/lib/auth";
+import { emailForPhone, isValidPhone, normalizePhone, useAuth } from "@/lib/auth";
 import { useLang } from "@/lib/i18n";
 
 export const Route = createFileRoute("/account")({
   head: () => ({
     meta: [
       { title: "حسابي | متجر النور" },
-      { name: "description", content: "سجّل الدخول بالاسم ورقم الهاتف لمتابعة طلباتك." },
+      { name: "description", content: "سجّل الدخول برقم الهاتف وكلمة المرور لمتابعة طلباتك." },
       { property: "og:title", content: "حسابي | متجر النور" },
       { property: "og:description", content: "إدارة بياناتك ومتابعة طلباتك في متجر النور." },
     ],
@@ -25,8 +25,10 @@ export const Route = createFileRoute("/account")({
 function AccountPage() {
   const { t } = useLang();
   const { user, profile, isAdmin, loading, refreshProfile } = useAuth();
+  const [mode, setMode] = useState<"signin" | "register">("signin");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -38,36 +40,48 @@ function AccountPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim().length < 3) {
-      toast.error(t("nameRequired"));
-      return;
-    }
     if (!isValidPhone(phone)) {
       toast.error(t("invalidPhone"));
       return;
     }
+    if (password.length < 6) {
+      toast.error(t("passwordShort"));
+      return;
+    }
+    if (mode === "register" && name.trim().length < 3) {
+      toast.error(t("nameRequired"));
+      return;
+    }
     setBusy(true);
-    const { email, password } = credentialsForPhone(phone);
+    const email = emailForPhone(phone);
     const digits = normalizePhone(phone);
     try {
-      const signIn = await supabase.auth.signInWithPassword({ email, password });
-      if (signIn.error) {
+      if (mode === "signin") {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw new Error(t("wrongCredentials"));
+      } else {
         const signUp = await supabase.auth.signUp({
           email,
           password,
           options: { data: { full_name: name.trim(), phone: digits } },
         });
-        if (signUp.error) throw signUp.error;
+        if (signUp.error) {
+          throw new Error(
+            signUp.error.message.toLowerCase().includes("already")
+              ? t("accountExists")
+              : signUp.error.message,
+          );
+        }
         if (!signUp.data.session) {
           const retry = await supabase.auth.signInWithPassword({ email, password });
-          if (retry.error) throw retry.error;
+          if (retry.error) throw new Error(retry.error.message);
         }
-      }
-      const { data: session } = await supabase.auth.getUser();
-      if (session.user) {
-        await supabase
-          .from("profiles")
-          .upsert({ id: session.user.id, full_name: name.trim(), phone: digits });
+        const { data: session } = await supabase.auth.getUser();
+        if (session.user) {
+          await supabase
+            .from("profiles")
+            .upsert({ id: session.user.id, full_name: name.trim(), phone: digits });
+        }
       }
       await refreshProfile();
       toast.success(t("welcome"));
@@ -102,13 +116,29 @@ function AccountPage() {
   if (!user) {
     return (
       <div className="mx-auto max-w-md">
-        <h1 className="text-xl font-bold">{t("signIn")}</h1>
+        <h1 className="text-xl font-bold">{t(mode === "signin" ? "signIn" : "register")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("authHint")}</p>
-        <form onSubmit={(e) => void onSubmit(e)} className="mt-5 space-y-4 rounded-2xl border bg-card p-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">{t("fullName")}</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
-          </div>
+        <div className="mt-4 grid grid-cols-2 gap-1 rounded-full bg-muted p-1">
+          {(["signin", "register"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={`rounded-full py-2 text-sm font-semibold transition ${
+                mode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+              }`}
+            >
+              {t(m === "signin" ? "signIn" : "register")}
+            </button>
+          ))}
+        </div>
+        <form onSubmit={(e) => void onSubmit(e)} className="mt-4 space-y-4 rounded-2xl border bg-card p-4">
+          {mode === "register" && (
+            <div className="space-y-2">
+              <Label htmlFor="name">{t("fullName")}</Label>
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="phone">{t("phone")}</Label>
             <Input
@@ -122,13 +152,26 @@ function AccountPage() {
               maxLength={20}
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">{t("password")}</Label>
+            <Input
+              id="password"
+              type="password"
+              dir="ltr"
+              autoComplete={mode === "signin" ? "current-password" : "new-password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              maxLength={72}
+            />
+          </div>
           <Button type="submit" className="h-12 w-full rounded-full text-base" disabled={busy}>
-            {t("signIn")}
+            {t(mode === "signin" ? "signIn" : "register")}
           </Button>
         </form>
       </div>
     );
   }
+
 
   return (
     <div className="mx-auto max-w-md space-y-4">
