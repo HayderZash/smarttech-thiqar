@@ -18,11 +18,23 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number] | "cancelled";
 
 export function statusLabel(status: string, lang: "ar" | "en") {
   const map: Record<string, { ar: string; en: string }> = {
-    review: { ar: "مراجعة", en: "Reviewing" },
-    preparing: { ar: "تجهيز", en: "Preparing" },
-    shipped: { ar: "إرسال", en: "Shipped" },
-    completed: { ar: "إكتمال", en: "Completed" },
+    review: { ar: "جديد", en: "New" },
+    preparing: { ar: "قيد التجهيز", en: "Preparing" },
+    shipped: { ar: "عند مندوب التوصيل", en: "With courier" },
+    completed: { ar: "منجز", en: "Completed" },
     cancelled: { ar: "ملغي", en: "Cancelled" },
+  };
+
+/** Plural section titles used in the admin orders tabs. */
+}
+
+export function statusGroupLabel(status: string, lang: "ar" | "en") {
+  const map: Record<string, { ar: string; en: string }> = {
+    review: { ar: "طلبات جديدة", en: "New orders" },
+    preparing: { ar: "طلبات قيد التجهيز", en: "Preparing" },
+    shipped: { ar: "طلبات عند مندوب التوصيل", en: "With courier" },
+    completed: { ar: "طلبات منجزة", en: "Completed orders" },
+    cancelled: { ar: "طلبات ملغية", en: "Cancelled orders" },
   };
   return map[status]?.[lang] ?? status;
 }
