@@ -161,6 +161,7 @@ function AdminPage() {
   const [bform, setBform] = useState({ image_url: "", title_ar: "", title_en: "", link_url: "" });
   const [couponForm, setCouponForm] = useState({ code: "", discount_type: "fixed", discount_value: 0 });
   const [store, setStore] = useState<Record<string, string>>({});
+  const [tab, setTab] = useState("orders");
 
   const saveProduct = useMutation({
     mutationFn: async () => {
