@@ -219,9 +219,10 @@ async function resolveChatId(
   return String(id);
 }
 
-async function notifyTelegram(
+/** Sends a plain text message to the store's Telegram admin chat. */
+async function sendTelegramText(
   supabase: { from: (t: string) => any },
-  payload: NotifyPayload,
+  text: string,
 ): Promise<void> {
   try {
     const lovableKey = process.env["LOVABLE_API_KEY"];
@@ -246,17 +247,6 @@ async function notifyTelegram(
     }
     if (!chatId) return;
 
-
-    const itemLines = payload.lines.map((l) => `• ${l.product_name} × ${l.quantity}`).join("\n");
-    const text = [
-      `📦 طلب جديد # ${payload.orderNumber}`,
-      `👤 الزبون: ${payload.name}`,
-      `📞 الهاتف: ${payload.phone}`,
-      `📍 المحافظة والنقطة الدالة: ${payload.governorate} - ${payload.landmark}`,
-      `🛒 المنتجات:\n${itemLines}`,
-      `💰 المبلغ الإجمالي مع التوصيل: ${payload.total.toLocaleString("en-US")} د.ع`,
-    ].join("\n");
-
     const res = await fetch(`${GATEWAY}/sendMessage`, {
       method: "POST",
       headers: tgHeaders(lovableKey, telegramKey),
@@ -270,6 +260,23 @@ async function notifyTelegram(
     console.error("Telegram notify error", err);
   }
 }
+
+async function notifyTelegram(
+  supabase: { from: (t: string) => any },
+  payload: NotifyPayload,
+): Promise<void> {
+  const itemLines = payload.lines.map((l) => `• ${l.product_name} × ${l.quantity}`).join("\n");
+  const text = [
+    `📦 طلب جديد # ${payload.orderNumber}`,
+    `👤 الزبون: ${payload.name}`,
+    `📞 الهاتف: ${payload.phone}`,
+    `📍 المحافظة والنقطة الدالة: ${payload.governorate} - ${payload.landmark}`,
+    `🛒 المنتجات:\n${itemLines}`,
+    `💰 المبلغ الإجمالي مع التوصيل: ${payload.total.toLocaleString("en-US")} د.ع`,
+  ].join("\n");
+  await sendTelegramText(supabase, text);
+}
+
 
 const unavailableSchema = z.object({
   order_item_id: z.string().uuid(),
