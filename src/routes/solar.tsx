@@ -372,17 +372,41 @@ th{background:#eaf3ec}tfoot td{font-weight:800;background:#f6f2e8}
           <p className="py-6 text-center text-sm text-muted-foreground">{t("noSolarComponents")}</p>
         ) : (
           <div className="mt-4 space-y-5">
+            {/* package tabs */}
+            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${tiers.length}, minmax(0,1fr))` }}>
+              {tiers.map((tr) => (
+                <button
+                  key={tr}
+                  type="button"
+                  onClick={() => setTier(tr)}
+                  className={cn(
+                    "rounded-xl border p-3 text-start transition",
+                    activeTier === tr ? "border-primary bg-primary/5" : "hover:bg-muted/50",
+                  )}
+                >
+                  <span className="block text-xs font-bold">{tierLabel[tr]}</span>
+                  <span className="mt-1 block text-sm font-extrabold text-primary">
+                    {formatIQD(tierTotal(tr), lang)}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {groups.every((g) => g.items.length === 0) && (
+              <p className="py-4 text-center text-sm text-muted-foreground">{t("packageEmpty")}</p>
+            )}
+
             {groups.map((g) =>
               g.items.length === 0 ? null : (
                 <div key={g.kind} className="space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground">
-                    {groupLabel[g.kind]}
-                  </p>
+                  <p className="text-xs font-semibold text-muted-foreground">{groupLabel[g.kind]}</p>
                   {g.items.map((i) => (
                     <button
                       key={i.c.id}
                       type="button"
-                      onClick={() => setPicked((p) => ({ ...p, [g.kind]: i.c.id }))}
+                      onClick={() =>
+                        setPicked((p) => ({ ...p, [`${activeTier}:${g.kind}`]: i.c.id }))
+                      }
                       className={cn(
                         "grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border p-3 text-start transition",
                         g.selected?.c.id === i.c.id
@@ -393,6 +417,7 @@ th{background:#eaf3ec}tfoot td{font-weight:800;background:#f6f2e8}
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-semibold">
                           {localized(lang, i.c.name_ar, i.c.name_en)}
+                          {i.c.brand ? ` — ${i.c.brand}` : ""}
                         </span>
                         <span className="block text-[11px] text-muted-foreground" dir="ltr">
                           {formatIQD(Number(i.c.price), lang)} ×{i.qty}
@@ -416,9 +441,15 @@ th{background:#eaf3ec}tfoot td{font-weight:800;background:#f6f2e8}
               <span className="text-sm font-semibold">{t("totalCost")}</span>
               <span className="text-lg font-extrabold text-primary">{formatIQD(total, lang)}</span>
             </div>
+
+            <Button className="w-full rounded-full" onClick={printQuote} disabled={total <= 0}>
+              <FileDown className="size-4" />
+              {t("exportQuote")}
+            </Button>
           </div>
         )}
       </section>
+
 
       <p className="mt-3 text-xs text-muted-foreground">{t("solarNote")}</p>
     </div>
