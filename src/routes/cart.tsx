@@ -206,6 +206,31 @@ function CartPage() {
         <h2 className="text-base font-bold">{t("orderSummary")}</h2>
 
         <div className="space-y-2">
+          <Label htmlFor="co-name">{t("fullName")}</Label>
+          <Input
+            id="co-name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            maxLength={120}
+            placeholder={t("fullName")}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="co-phone">{t("phone")}</Label>
+          <Input
+            id="co-phone"
+            type="tel"
+            inputMode="tel"
+            dir="ltr"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            maxLength={20}
+            placeholder="07XXXXXXXXX"
+          />
+        </div>
+
+        <div className="space-y-2">
           <Label>{t("governorate")}</Label>
           <Select value={govId} onValueChange={setGovId}>
             <SelectTrigger>
