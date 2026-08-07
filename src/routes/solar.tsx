@@ -82,6 +82,7 @@ function SolarPage() {
   const [inverterMode, setInverterMode] = useState<"auto" | "manual">("auto");
   const [inverterManual, setInverterManual] = useState(5);
 
+  const [tier, setTier] = useState<"economy" | "mid" | "pro">("economy");
   const [picked, setPicked] = useState<Record<string, string>>({});
 
   const update = (id: number, patch: Partial<Device>) =>
