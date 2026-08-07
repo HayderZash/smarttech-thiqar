@@ -6,6 +6,7 @@ import { NewsCarousel } from "@/components/NewsCarousel";
 import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard";
 import { discountPercent } from "@/lib/format";
 import { CategoryIcon } from "@/lib/category-icons";
+import { categoryPathLabel } from "@/lib/category-path";
 import { localized, useLang } from "@/lib/i18n";
 import { bannersQuery, categoriesQuery, productsQuery } from "@/lib/queries";
 
