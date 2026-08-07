@@ -157,6 +157,19 @@ function OrdersPage() {
               {o["notes"]}
             </p>
           )}
+
+          {o["status"] === "review" && (
+            <Button
+              variant="outline"
+              className="w-full rounded-full border-destructive/40 text-destructive hover:bg-destructive/10"
+              disabled={busyId === o["id"]}
+              onClick={() => void onCancel(String(o["id"]))}
+            >
+              <XCircle className="size-4" />
+              {t("cancelOrder")}
+            </Button>
+          )}
+
         </article>
       ))}
     </div>
