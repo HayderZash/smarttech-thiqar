@@ -1096,6 +1096,29 @@ function AdminPage() {
                 />
               </div>
               <div className="space-y-2">
+                <Label>البراند / الماركة</Label>
+                <Input
+                  value={solarForm.brand}
+                  onChange={(e) => setSolarForm({ ...solarForm, brand: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>الفئة</Label>
+                <Select
+                  value={solarForm.tier}
+                  onValueChange={(v) => setSolarForm({ ...solarForm, tier: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="economy">اقتصادي</SelectItem>
+                    <SelectItem value="mid">متوسط</SelectItem>
+                    <SelectItem value="pro">احترافي</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label>
                   {solarForm.kind === "panel"
                     ? "واطية اللوح (W)"
