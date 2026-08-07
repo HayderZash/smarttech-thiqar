@@ -88,7 +88,11 @@ export function ProductsExcel({
   onDone: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<{ phase: string; done: number; total: number } | null>(
+    null,
+  );
   const inputRef = useRef<HTMLInputElement>(null);
+
 
   const exportTemplate = () => {
     const example = {
