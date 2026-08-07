@@ -385,7 +385,7 @@ function AdminPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const startEdit = (p: (typeof allProductsRef)[number]) => {
+  const startEdit = (p: Product) => {
     setEditingId(p.id);
     setPform({
       sku: p.sku ?? "",
