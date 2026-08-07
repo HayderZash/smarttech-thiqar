@@ -18,25 +18,22 @@ const placeOrderSchema = z.object({
 
 const couponSchema = z.object({ code: z.string().trim().min(1).max(60), subtotal: z.number().min(0) });
 
-const PRICE_STEP = 250;
+import { applyPricing, parsePriceTiers, type PriceTier } from "@/lib/format";
 
-/** Adds the store-wide markup then rounds to the nearest 250 IQD (never below base). */
-function applyMarkup(base: number, percent: number) {
-  const b = Number(base) || 0;
-  if (!percent || b <= 0) return b;
-  return Math.max(b, Math.round((b * (1 + percent / 100)) / PRICE_STEP) * PRICE_STEP);
-}
-
-async function getMarkup(supabase: {
+/** Reads the tiered pricing rules stored in store_settings. */
+async function getPricingTiers(supabase: {
   from: (t: string) => any;
-}): Promise<number> {
+}): Promise<PriceTier[]> {
   const { data } = await supabase
     .from("store_settings")
-    .select("value")
-    .eq("key", "price_markup_percent")
-    .maybeSingle();
-  return Number(data?.value ?? 0) || 0;
+    .select("key, value")
+    .in("key", ["price_tiers", "price_markup_percent"]);
+  const map = Object.fromEntries(
+    ((data ?? []) as { key: string; value: string }[]).map((r) => [r.key, r.value]),
+  );
+  return parsePriceTiers(map["price_tiers"], Number(map["price_markup_percent"] ?? 0) || 0);
 }
+
 
 function computeDiscount(
   coupon: { discount_type: string; discount_value: number } | null,
@@ -80,7 +77,7 @@ export const placeOrder = createServerFn({ method: "POST" })
     if (prodErr) throw new Error(prodErr.message);
     if (!products?.length) throw new Error("No valid products in the order");
 
-    const markup = await getMarkup(supabase);
+    const tiers = await getPricingTiers(supabase);
 
     const lines = data.items
       .map((line) => {
@@ -90,7 +87,7 @@ export const placeOrder = createServerFn({ method: "POST" })
           p.discount_price != null && Number(p.discount_price) > 0 && Number(p.discount_price) < Number(p.price)
             ? Number(p.discount_price)
             : Number(p.price);
-        const unit = applyMarkup(base, markup);
+        const unit = applyPricing(base, tiers);
 
         return {
           product_id: p.id,
@@ -467,7 +464,7 @@ export const addOrderItem = createServerFn({ method: "POST" })
       Number(product.discount_price) < Number(product.price)
         ? Number(product.discount_price)
         : Number(product.price);
-    const unit = applyMarkup(baseUnit, await getMarkup(supabase));
+    const unit = applyPricing(baseUnit, await getPricingTiers(supabase));
 
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

@@ -27,17 +27,70 @@ export function statusLabel(status: string, lang: "ar" | "en") {
   return map[status]?.[lang] ?? status;
 }
 
-/** Store-wide markup: adds a percentage then rounds to the nearest 250 IQD. */
+/** Store-wide pricing: tiered markup rounded to the nearest 250 IQD. */
 export const PRICE_STEP = 250;
 
-export function applyMarkup(base: number, percent: number) {
+export type PriceTier = {
+  /** Upper bound of the base price for this tier (null = no limit). */
+  max: number | null;
+  /** Percentage added on top of the base price. */
+  percent: number;
+  /** Flat amount added after the percentage. */
+  add: number;
+};
+
+/** Defaults follow the requested curve: 5k→7k, 25k→30k, 100k→112k, 172k→180k. */
+export const DEFAULT_PRICE_TIERS: PriceTier[] = [
+  { max: 10000, percent: 40, add: 0 },
+  { max: 50000, percent: 20, add: 0 },
+  { max: 150000, percent: 12, add: 0 },
+  { max: null, percent: 4.6, add: 0 },
+];
+
+/** Reads the tiers stored in store_settings (falls back to the legacy flat percent). */
+export function parsePriceTiers(raw: unknown, legacyPercent = 0): PriceTier[] {
+  if (typeof raw === "string" && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed) && parsed.length) {
+        const tiers = parsed
+          .map((t) => {
+            const o = t as Record<string, unknown>;
+            const max = o["max"] === null || o["max"] === "" ? null : Number(o["max"]);
+            return {
+              max: max == null || !Number.isFinite(max) ? null : max,
+              percent: Number(o["percent"]) || 0,
+              add: Number(o["add"]) || 0,
+            };
+          })
+          .sort((a, b) => (a.max ?? Infinity) - (b.max ?? Infinity));
+        return tiers;
+      }
+    } catch {
+      /* fall through to legacy */
+    }
+  }
+  if (legacyPercent) return [{ max: null, percent: legacyPercent, add: 0 }];
+  return DEFAULT_PRICE_TIERS;
+}
+
+export function tierFor(base: number, tiers: PriceTier[]): PriceTier | null {
+  for (const t of tiers) if (t.max == null || base <= t.max) return t;
+  return tiers[tiers.length - 1] ?? null;
+}
+
+/** Applies the matching tier then rounds to the nearest 250 IQD (never below base). */
+export function applyPricing(base: number, tiers: PriceTier[]) {
   const b = Number(base) || 0;
-  if (!percent || b <= 0) return b;
-  const raised = b * (1 + percent / 100);
+  if (b <= 0) return b;
+  const tier = tierFor(b, tiers);
+  if (!tier) return b;
+  const raised = b * (1 + (Number(tier.percent) || 0) / 100) + (Number(tier.add) || 0);
   const rounded = Math.round(raised / PRICE_STEP) * PRICE_STEP;
   // Never go below the original price (cheap items may round back down).
   return Math.max(b, rounded);
 }
+
 
 export function effectivePrice(p: { price: number; discount_price: number | null }) {
   return p.discount_price != null && p.discount_price > 0 && p.discount_price < p.price
