@@ -21,7 +21,7 @@ import { useCart } from "@/lib/cart";
 import { formatIQD } from "@/lib/format";
 import { localized, useLang } from "@/lib/i18n";
 import { placeOrder, validateCoupon } from "@/lib/orders.functions";
-import { governoratesQuery } from "@/lib/queries";
+import { governoratesQuery, myOrdersQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -55,7 +55,7 @@ function CartPage() {
 
   const gov = (governorates ?? []).find((g) => g.id === govId);
   const shipping = Number(gov?.shipping_cost ?? 0);
-  const { data: myOrders } = useQuery(myOrdersQuery(user?.id));
+  const { data: myOrders } = useQuery(myOrdersQuery(user?.id)) as { data: unknown[] | undefined };
   const firstOrderDiscount = user && (myOrders?.length ?? 0) === 0 ? Math.round((subtotal * 5) / 100) : 0;
   const total = Math.max(0, subtotal - discount - firstOrderDiscount) + shipping;
 
