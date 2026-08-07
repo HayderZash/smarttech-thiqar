@@ -218,6 +218,21 @@ const dict = {
   },
   firstOrderDiscount: { ar: "خصم أول طلب (5%)", en: "First order discount (5%)" },
 
+  // add product to an existing order
+  addItemToOrder: { ar: "إضافة منتج للطلب", en: "Add product to order" },
+  addItemHint: {
+    ar: "يمكنك إضافة منتجات لهذا الطلب ما دام قيد المراجعة (قبل بدء التجهيز).",
+    en: "You can add products while the order is still under review (before preparation).",
+  },
+  searchProductToAdd: { ar: "ابحث عن منتج لإضافته...", en: "Search a product to add..." },
+  add: { ar: "إضافة", en: "Add" },
+  itemAdded: { ar: "تمت إضافة المنتج للطلب", en: "Product added to the order" },
+  cannotModify: {
+    ar: "لا يمكن تعديل الطلب بعد بدء التجهيز",
+    en: "Cannot modify the order after preparation starts",
+  },
+
+
   // unavailable items / notifications
   unavailableItem: { ar: "غير متوفر", en: "Unavailable" },
   markUnavailable: { ar: "تعليم كغير متوفر", en: "Mark unavailable" },
