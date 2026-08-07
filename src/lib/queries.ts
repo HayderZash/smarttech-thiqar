@@ -43,17 +43,29 @@ export type Category = {
 const PRODUCT_COLS =
   "id, sku, name_ar, name_en, description_ar, description_en, price, discount_price, category_id, image_url, catalog_pdf_url, stock_qty, is_featured, images, deal_ends_at, created_at";
 
+const PAGE = 1000;
+
 export const productsQuery = queryOptions({
   queryKey: ["products"],
   queryFn: async (): Promise<Product[]> => {
-    const { data, error } = await supabase
-      .from("products")
-      .select(PRODUCT_COLS)
-      .order("created_at", { ascending: false });
-    if (error) throw error;
-    return (data ?? []) as Product[];
+    // PostgREST caps a single response at 1000 rows — page through everything.
+    const all: Product[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await supabase
+        .from("products")
+        .select(PRODUCT_COLS)
+        .order("created_at", { ascending: false })
+        .order("id")
+        .range(from, from + PAGE - 1);
+      if (error) throw error;
+      const rows = (data ?? []) as Product[];
+      all.push(...rows);
+      if (rows.length < PAGE) break;
+    }
+    return all;
   },
 });
+
 
 export const categoriesQuery = queryOptions({
   queryKey: ["categories"],
