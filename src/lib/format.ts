@@ -24,10 +24,10 @@ export function statusLabel(status: string, lang: "ar" | "en") {
     completed: { ar: "منجز", en: "Completed" },
     cancelled: { ar: "ملغي", en: "Cancelled" },
   };
-
-/** Plural section titles used in the admin orders tabs. */
+  return map[status]?.[lang] ?? status;
 }
 
+/** Plural section titles used in the admin orders tabs. */
 export function statusGroupLabel(status: string, lang: "ar" | "en") {
   const map: Record<string, { ar: string; en: string }> = {
     review: { ar: "طلبات جديدة", en: "New orders" },
