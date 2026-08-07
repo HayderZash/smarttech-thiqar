@@ -339,6 +339,7 @@ function AdminPage() {
     link_url: "",
   });
   const [prodPage, setProdPage] = useState(1);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [couponForm, setCouponForm] = useState({ code: "", discount_type: "fixed", discount_value: 0 });
   const [solarForm, setSolarForm] = useState({ ...emptySolar });
   const [store, setStore] = useState<Record<string, string>>({});
@@ -359,7 +360,7 @@ function AdminPage() {
   const saveProduct = useMutation({
     mutationFn: async () => {
       const { images_text, deal_ends_at, ...rest } = pform;
-      const { error } = await supabase.from("products").insert({
+      const values = {
         ...rest,
         category_id: pform.category_id || null,
         discount_price: pform.discount_price || null,
@@ -368,16 +369,43 @@ function AdminPage() {
           .map((u) => u.trim())
           .filter(Boolean),
         deal_ends_at: deal_ends_at ? new Date(deal_ends_at).toISOString() : null,
-      });
+      };
+      const { error } = editingId
+        ? await supabase.from("products").update(values).eq("id", editingId)
+        : await supabase.from("products").insert(values);
       if (error) throw error;
     },
     onSuccess: () => {
+      const wasEditing = !!editingId;
       setPform({ ...emptyProduct });
+      setEditingId(null);
       invalidate(["products"]);
-      toast.success("تمت الإضافة");
+      toast.success(wasEditing ? "تم حفظ التعديلات" : "تمت الإضافة");
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const startEdit = (p: (typeof allProductsRef)[number]) => {
+    setEditingId(p.id);
+    setPform({
+      sku: p.sku ?? "",
+      name_ar: p.name_ar ?? "",
+      name_en: p.name_en ?? "",
+      description_ar: p.description_ar ?? "",
+      description_en: p.description_en ?? "",
+      price: Number(p.price) || 0,
+      discount_price: p.discount_price === null ? null : Number(p.discount_price),
+      category_id: p.category_id ?? null,
+      image_url: p.image_url ?? "",
+      catalog_pdf_url: p.catalog_pdf_url ?? "",
+      stock_qty: Number(p.stock_qty) || 0,
+      is_featured: !!p.is_featured,
+      images_text: (p.images ?? []).join("\n"),
+      deal_ends_at: p.deal_ends_at ? new Date(p.deal_ends_at).toISOString().slice(0, 16) : "",
+    });
+    document.getElementById("product-new")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
 
   if (loading) return <div className="h-64 animate-pulse rounded-2xl bg-muted" />;
   if (!isAdmin) {
