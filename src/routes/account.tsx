@@ -13,10 +13,10 @@ import { useLang } from "@/lib/i18n";
 export const Route = createFileRoute("/account")({
   head: () => ({
     meta: [
-      { title: "حسابي | متجر النور" },
+      { title: "حسابي | SmartTech" },
       { name: "description", content: "سجّل الدخول برقم الهاتف وكلمة المرور لمتابعة طلباتك." },
-      { property: "og:title", content: "حسابي | متجر النور" },
-      { property: "og:description", content: "إدارة بياناتك ومتابعة طلباتك في متجر النور." },
+      { property: "og:title", content: "حسابي | SmartTech" },
+      { property: "og:description", content: "إدارة بياناتك ومتابعة طلباتك في SmartTech." },
     ],
   }),
   component: AccountPage,

@@ -26,10 +26,10 @@ import { bannersQuery, categoriesQuery, governoratesQuery, productsQuery, settin
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "لوحة الإدارة | متجر النور" },
+      { title: "لوحة الإدارة | SmartTech" },
       { name: "description", content: "إدارة المنتجات والأقسام والطلبات وإعدادات المتجر." },
       { name: "robots", content: "noindex" },
-      { property: "og:title", content: "لوحة الإدارة | متجر النور" },
+      { property: "og:title", content: "لوحة الإدارة | SmartTech" },
       { property: "og:description", content: "إدارة المتجر بالكامل من مكان واحد." },
     ],
   }),

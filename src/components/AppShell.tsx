@@ -128,7 +128,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </span>
             )}
             <span className="hidden text-base font-bold sm:block">
-              {storeName || (lang === "ar" ? "متجر النور" : "Al Noor Store")}
+              {storeName || (lang === "ar" ? "SmartTech" : "SmartTech")}
             </span>
           </Link>
 
@@ -179,7 +179,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5">{children}</main>
 
       <footer className="mt-8 hidden border-t bg-sand py-6 text-center text-xs text-muted-foreground md:block">
-        {storeName || "متجر النور"} © {new Date().getFullYear()}
+        {storeName || "SmartTech"} © {new Date().getFullYear()}
       </footer>
 
       {support && (
