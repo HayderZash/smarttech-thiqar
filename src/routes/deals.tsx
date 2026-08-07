@@ -1,10 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 
+import { Pagination } from "@/components/Pagination";
 import { ProductCard } from "@/components/ProductCard";
 import { discountPercent } from "@/lib/format";
 import { useLang } from "@/lib/i18n";
 import { productsQuery } from "@/lib/queries";
+
+const PER_PAGE = 30;
 
 export const Route = createFileRoute("/deals")({
   head: () => ({
