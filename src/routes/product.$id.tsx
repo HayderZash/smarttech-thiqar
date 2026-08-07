@@ -98,7 +98,7 @@ function ProductPage() {
           <div className="relative overflow-hidden rounded-2xl border bg-sand">
             <div className="aspect-square overflow-hidden">
               {gallery[active] ? (
-                <img src={gallery[active]} alt={name} className="h-full w-full scale-[1.18] object-cover object-center" />
+                <img src={gallery[active]} alt={name} className="h-full w-full scale-[1.5] object-cover object-center" />
 
               ) : (
                 <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
