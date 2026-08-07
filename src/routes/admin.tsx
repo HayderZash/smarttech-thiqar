@@ -220,6 +220,7 @@ function AdminPage() {
   const categories = useQuery(categoriesQuery);
   const reviews = useQuery(allReviewsQuery);
   const alerts = useQuery(stockAlertsQuery);
+  const solarComponents = useQuery(allSolarComponentsQuery);
   const governorates = useQuery(governoratesQuery);
   const banners = useQuery(bannersQuery);
   const settings = useQuery(settingsQuery);
