@@ -93,7 +93,25 @@ function CategoriesPage() {
             </section>
           );
         })}
+
+        <section className="overflow-hidden rounded-2xl border bg-card">
+          <Link to="/search" search={{ cat: "none" }} className="flex items-center gap-3 p-4 hover:bg-sand">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-sand text-lg font-bold text-primary">
+              {lang === "ar" ? "ع" : "G"}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-base font-semibold">
+                {lang === "ar" ? "العام" : "General"}
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                {(products.data ?? []).filter((p) => !p.category_id).length} {t("products")}
+              </span>
+            </span>
+            <ChevronLeft className="size-5 shrink-0 text-muted-foreground ltr:rotate-180" />
+          </Link>
+        </section>
       </div>
+
 
       {!categories.isLoading && roots.length === 0 && (
         <p className="py-16 text-center text-sm text-muted-foreground">{t("noProducts")}</p>
