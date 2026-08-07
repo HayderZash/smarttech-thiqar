@@ -866,50 +866,102 @@ function AdminPage() {
               <Plus className="size-4" /> إضافة كوبون
             </Button>
           </div>
+          </Panel>
         </TabsContent>
 
         {/* SETTINGS */}
-        <TabsContent value="settings" className="space-y-3">
-          <div className="grid gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-2">
-            {[
-              { key: "store_name_ar", label: "اسم المتجر (عربي)" },
-              { key: "store_name_en", label: "اسم المتجر (إنكليزي)" },
-              { key: "support_whatsapp", label: "رقم واتساب الدعم" },
-              { key: "telegram_chat_id", label: "معرّف محادثة تيليجرام للإشعارات" },
-            ].map((f) => (
-              <div key={f.key} className="space-y-2">
-                <Label>{f.label}</Label>
+        <TabsContent value="settings" className="space-y-4">
+          <Panel id="set-store" title="معلومات المتجر" desc="الاسم والشعار والنبذة التعريفية">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[
+                { key: "store_name_ar", label: "اسم المتجر (عربي)" },
+                { key: "store_name_en", label: "اسم المتجر (إنكليزي)" },
+              ].map((f) => (
+                <div key={f.key} className="space-y-2">
+                  <Label>{f.label}</Label>
+                  <Input
+                    defaultValue={settings.data?.[f.key] ?? ""}
+                    onChange={(e) => setStore({ ...store, [f.key]: e.target.value })}
+                  />
+                </div>
+              ))}
+              <FileField
+                label="شعار المتجر"
+                accept="image/*"
+                folder="branding"
+                value={store["logo_url"] ?? settings.data?.["logo_url"] ?? ""}
+                onChange={(url) => setStore({ ...store, logo_url: url })}
+              />
+              <div className="space-y-2">
+                <Label>ساعات العمل</Label>
                 <Input
-                  defaultValue={settings.data?.[f.key] ?? ""}
-                  onChange={(e) => setStore({ ...store, [f.key]: e.target.value })}
+                  defaultValue={settings.data?.["working_hours"] ?? ""}
+                  placeholder="السبت - الخميس، 9 صباحاً - 9 مساءً"
+                  onChange={(e) => setStore({ ...store, working_hours: e.target.value })}
                 />
               </div>
-            ))}
-            <FileField
-              label="شعار المتجر"
-              accept="image/*"
-              folder="branding"
-              value={store["logo_url"] ?? settings.data?.["logo_url"] ?? ""}
-              onChange={(url) => setStore({ ...store, logo_url: url })}
-            />
-            <Button
-              className="sm:col-span-2"
-              onClick={async () => {
-                const rows = Object.entries(store).map(([key, value]) => ({ key, value }));
-                if (rows.length === 0) return;
-                const { error } = await supabase.from("store_settings").upsert(rows);
-                if (error) toast.error(error.message);
-                else {
-                  invalidate(["store_settings"]);
-                  toast.success("تم الحفظ");
-                }
-              }}
-            >
-              حفظ الإعدادات
-            </Button>
-          </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>نبذة عن المتجر (عربي)</Label>
+                <Textarea
+                  rows={3}
+                  defaultValue={settings.data?.["store_about_ar"] ?? ""}
+                  onChange={(e) => setStore({ ...store, store_about_ar: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label>نبذة عن المتجر (إنكليزي)</Label>
+                <Textarea
+                  rows={3}
+                  defaultValue={settings.data?.["store_about_en"] ?? ""}
+                  onChange={(e) => setStore({ ...store, store_about_en: e.target.value })}
+                />
+              </div>
+            </div>
+          </Panel>
+
+          <Panel id="set-contact" title="تفاصيل التواصل" desc="أرقام الهاتف والعنوان وروابط التواصل">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[
+                { key: "support_whatsapp", label: "رقم واتساب الدعم", ltr: true },
+                { key: "store_phone", label: "رقم الهاتف", ltr: true },
+                { key: "store_email", label: "البريد الإلكتروني", ltr: true },
+                { key: "store_address", label: "عنوان المتجر" },
+                { key: "facebook_url", label: "رابط فيسبوك", ltr: true },
+                { key: "instagram_url", label: "رابط إنستغرام", ltr: true },
+                { key: "telegram_chat_id", label: "معرّف محادثة تيليجرام للإشعارات", ltr: true },
+              ].map((f) => (
+                <div key={f.key} className="space-y-2">
+                  <Label>{f.label}</Label>
+                  <Input
+                    dir={f.ltr ? "ltr" : undefined}
+                    defaultValue={settings.data?.[f.key] ?? ""}
+                    onChange={(e) => setStore({ ...store, [f.key]: e.target.value })}
+                  />
+                </div>
+              ))}
+            </div>
+          </Panel>
+
+          <Button
+            className="w-full"
+            disabled={Object.keys(store).length === 0}
+            onClick={async () => {
+              const rows = Object.entries(store).map(([key, value]) => ({ key, value }));
+              if (rows.length === 0) return;
+              const { error } = await supabase.from("store_settings").upsert(rows);
+              if (error) toast.error(error.message);
+              else {
+                invalidate(["store_settings"]);
+                toast.success("تم الحفظ");
+              }
+            }}
+          >
+            حفظ الإعدادات
+          </Button>
         </TabsContent>
+        </div>
       </Tabs>
     </div>
+
   );
 }
