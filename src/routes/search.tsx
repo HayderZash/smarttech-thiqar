@@ -70,8 +70,9 @@ function SearchPage() {
     : undefined;
   const subCats = activeCat ? allCats.filter((c) => c.parent_id === activeCat.id) : [];
 
+  const uncategorized = category === "none";
   const catIds =
-    category === "all"
+    category === "all" || uncategorized
       ? null
       : [category, ...allCats.filter((c) => c.parent_id === category).map((c) => c.id)];
 
@@ -79,7 +80,9 @@ function SearchPage() {
   const results = (products.data ?? [])
     .filter((p) => {
       const price = effectivePrice(p);
+      if (uncategorized && p.category_id) return false;
       if (catIds && !(p.category_id && catIds.includes(p.category_id))) return false;
+
       if (price < lo || price > Math.max(hi, lo)) return false;
       if (!term) return true;
       return `${p.name_ar} ${p.name_en} ${p.sku}`.toLowerCase().includes(term);
