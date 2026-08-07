@@ -63,18 +63,30 @@ const dict = {
   // account
   fullName: { ar: "الاسم الثلاثي", en: "Full name" },
   phone: { ar: "رقم الهاتف (واتساب)", en: "Phone number (WhatsApp)" },
-  signIn: { ar: "دخول / تسجيل", en: "Sign in / Register" },
+  signIn: { ar: "تسجيل الدخول", en: "Sign in" },
+  register: { ar: "إنشاء حساب", en: "Register" },
+  password: { ar: "كلمة المرور", en: "Password" },
   signOut: { ar: "تسجيل الخروج", en: "Sign out" },
   save: { ar: "حفظ", en: "Save" },
   saved: { ar: "تم الحفظ", en: "Saved" },
   editProfile: { ar: "تعديل الملف الشخصي", en: "Edit profile" },
   welcome: { ar: "أهلاً بك", en: "Welcome" },
   authHint: {
-    ar: "أدخل اسمك الثلاثي ورقم هاتفك للدخول أو إنشاء حساب جديد",
-    en: "Enter your full name and phone number to sign in or register",
+    ar: "سجّل الدخول برقم الهاتف وكلمة المرور، وعند إنشاء حساب جديد أضف اسمك الثلاثي",
+    en: "Sign in with your phone number and password; add your full name when registering",
   },
   invalidPhone: { ar: "رقم هاتف غير صحيح", en: "Invalid phone number" },
   nameRequired: { ar: "الرجاء إدخال الاسم الثلاثي", en: "Full name is required" },
+  passwordShort: {
+    ar: "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
+    en: "Password must be at least 6 characters",
+  },
+  wrongCredentials: {
+    ar: "رقم الهاتف أو كلمة المرور غير صحيحة",
+    en: "Incorrect phone number or password",
+  },
+  accountExists: { ar: "الحساب موجود مسبقاً، سجّل الدخول", en: "Account already exists, sign in" },
+
   // misc
   currency: { ar: "د.ع", en: "IQD" },
   language: { ar: "English", en: "العربية" },
