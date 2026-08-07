@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { Countdown } from "@/components/Countdown";
 import { ProductCard, StockBadge } from "@/components/ProductCard";
+import { ProductImage } from "@/components/ProductImage";
 import { ProductReviews } from "@/components/ProductReviews";
 import { StockAlert } from "@/components/StockAlert";
 import { Button } from "@/components/ui/button";
@@ -98,11 +99,7 @@ function ProductPage() {
           <div className="relative overflow-hidden rounded-2xl border bg-sand">
             <div className="relative aspect-square overflow-hidden">
               {gallery[active] ? (
-                <img
-                  src={gallery[active]}
-                  alt={name}
-                  className="absolute start-1/2 top-[46%] h-[160%] w-[160%] max-w-none -translate-x-1/2 -translate-y-1/2 object-cover rtl:translate-x-1/2"
-                />
+                <ProductImage src={gallery[active]} alt={name} />
 
               ) : (
                 <div className="flex h-full items-center justify-center text-sm text-muted-foreground">

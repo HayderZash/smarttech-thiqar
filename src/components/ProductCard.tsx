@@ -8,6 +8,7 @@ import { useCart } from "@/lib/cart";
 import { localized, useLang } from "@/lib/i18n";
 import { discountPercent, effectivePrice, formatIQD } from "@/lib/format";
 import type { Product } from "@/lib/queries";
+import { ProductImage } from "@/components/ProductImage";
 import { useWishlist } from "@/lib/wishlist";
 import { cn } from "@/lib/utils";
 
@@ -62,11 +63,11 @@ export function ProductCard({ product }: { product: Product }) {
       <Link to="/product/$id" params={{ id: product.id }} className="flex flex-1 flex-col">
         <div className="relative aspect-square overflow-hidden bg-sand">
           {product.image_url ? (
-            <img
+            <ProductImage
               src={product.image_url}
               alt={localized(lang, product.name_ar, product.name_en)}
               loading="lazy"
-              className="absolute start-1/2 top-[46%] h-[160%] w-[160%] max-w-none -translate-x-1/2 -translate-y-1/2 object-cover transition-[width,height] duration-300 group-hover:h-[167%] group-hover:w-[167%] rtl:translate-x-1/2"
+              className="transition-transform duration-300 group-hover:scale-105"
             />
 
           ) : (
