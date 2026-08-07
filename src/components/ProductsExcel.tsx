@@ -249,14 +249,15 @@ export function ProductsExcel({
           تصدير المنتجات الحالية
         </Button>
         <Button type="button" disabled={busy} asChild>
-          <label className="cursor-pointer">
+          <label className={busy ? "pointer-events-none opacity-70" : "cursor-pointer"}>
             {busy ? <Loader2 className="size-4 animate-spin" /> : <FileSpreadsheet className="size-4" />}
-            رفع ملف Excel
+            {busy ? "جارٍ الرفع…" : "رفع ملف Excel"}
             <input
               ref={inputRef}
               type="file"
               accept=".xlsx,.xls,.csv"
               className="hidden"
+              disabled={busy}
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 if (f) void handleFile(f);
@@ -265,6 +266,23 @@ export function ProductsExcel({
           </label>
         </Button>
       </div>
+      {progress && (
+        <div className="space-y-2 rounded-xl border bg-muted/40 p-3">
+          <div className="flex items-center justify-between text-xs font-semibold">
+            <span>{progress.phase}</span>
+            <span dir="ltr">
+              {progress.total
+                ? `${progress.done} / ${progress.total} (${Math.round((progress.done / progress.total) * 100)}%)`
+                : "…"}
+            </span>
+          </div>
+          <Progress value={progress.total ? (progress.done / progress.total) * 100 : undefined} />
+          <p className="text-[11px] text-muted-foreground">
+            لا تغلق الصفحة حتى انتهاء الرفع — الملفات الكبيرة قد تستغرق عدة دقائق.
+          </p>
+        </div>
+      )}
+
     </div>
   );
 }
