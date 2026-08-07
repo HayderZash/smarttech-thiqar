@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard";
@@ -17,6 +17,7 @@ import { localized, useLang } from "@/lib/i18n";
 import { categoriesQuery, productsQuery } from "@/lib/queries";
 
 type Search = { q?: string | undefined; cat?: string | undefined };
+type SortKey = "newest" | "name_asc" | "name_desc" | "price_asc" | "price_desc";
 
 export const Route = createFileRoute("/search")({
   validateSearch: (search: Record<string, unknown>): Search => ({
@@ -26,9 +27,11 @@ export const Route = createFileRoute("/search")({
   head: () => ({
     meta: [
       { title: "البحث عن المنتجات | SmartTech" },
-      { name: "description", content: "ابحث عن المنتجات وفلترها حسب القسم والسعر." },
+      { name: "description", content: "ابحث عن المنتجات وفلترها حسب القسم والسعر والترتيب." },
       { property: "og:title", content: "البحث | SmartTech" },
       { property: "og:description", content: "ابحث وفلتر منتجات المتجر حسب القسم والسعر." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: SearchPage,
@@ -36,11 +39,12 @@ export const Route = createFileRoute("/search")({
 
 function SearchPage() {
   const { q, cat } = Route.useSearch();
+  const navigate = useNavigate();
   const { lang, t } = useLang();
   const products = useQuery(productsQuery);
   const categories = useQuery(categoriesQuery);
 
-  const [category, setCategory] = useState(cat ?? "all");
+  const [sort, setSort] = useState<SortKey>("newest");
   const maxPrice = useMemo(
     () => Math.max(100000, ...(products.data ?? []).map((p) => effectivePrice(p))),
     [products.data],
@@ -49,36 +53,84 @@ function SearchPage() {
   const hi = range[1] ?? maxPrice;
   const lo = range[0] ?? 0;
 
+  const allCats = categories.data ?? [];
+  const category = cat ?? "all";
+  const activeCat = allCats.find((c) => c.id === category);
+  const catIds =
+    category === "all"
+      ? null
+      : [category, ...allCats.filter((c) => c.parent_id === category).map((c) => c.id)];
+
   const term = (q ?? "").trim().toLowerCase();
-  const results = (products.data ?? []).filter((p) => {
-    const price = effectivePrice(p);
-    if (category !== "all" && p.category_id !== category) return false;
-    if (price < lo || price > Math.max(hi, lo)) return false;
-    if (!term) return true;
-    return `${p.name_ar} ${p.name_en} ${p.sku}`.toLowerCase().includes(term);
-  });
+  const results = (products.data ?? [])
+    .filter((p) => {
+      const price = effectivePrice(p);
+      if (catIds && !(p.category_id && catIds.includes(p.category_id))) return false;
+      if (price < lo || price > Math.max(hi, lo)) return false;
+      if (!term) return true;
+      return `${p.name_ar} ${p.name_en} ${p.sku}`.toLowerCase().includes(term);
+    })
+    .sort((a, b) => {
+      const nameA = localized(lang, a.name_ar, a.name_en);
+      const nameB = localized(lang, b.name_ar, b.name_en);
+      switch (sort) {
+        case "name_asc":
+          return nameA.localeCompare(nameB, lang);
+        case "name_desc":
+          return nameB.localeCompare(nameA, lang);
+        case "price_asc":
+          return effectivePrice(a) - effectivePrice(b);
+        case "price_desc":
+          return effectivePrice(b) - effectivePrice(a);
+        default:
+          return 0;
+      }
+    });
 
   return (
     <div>
       <h1 className="mb-4 text-xl font-bold">
-        {t("searchTitle")}
+        {activeCat ? localized(lang, activeCat.name_ar, activeCat.name_en) : t("searchTitle")}
         {term && <span className="text-muted-foreground"> — {q}</span>}
       </h1>
 
-      <div className="mb-5 grid gap-4 rounded-2xl border bg-card p-4 sm:grid-cols-2">
+      <div className="mb-5 grid gap-4 rounded-2xl border bg-card p-4 sm:grid-cols-3">
         <div className="space-y-2">
           <Label>{t("allCategories")}</Label>
-          <Select value={category} onValueChange={setCategory}>
+          <Select
+            value={category}
+            onValueChange={(v) =>
+              navigate({
+                to: "/search",
+                search: (prev) => ({ ...prev, cat: v === "all" ? undefined : v }),
+              })
+            }
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("allCategories")}</SelectItem>
-              {(categories.data ?? []).map((c) => (
+              {allCats.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {localized(lang, c.name_ar, c.name_en)}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>{t("sortBy")}</Label>
+          <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">{t("sortNewest")}</SelectItem>
+              <SelectItem value="name_asc">{t("sortNameAsc")}</SelectItem>
+              <SelectItem value="name_desc">{t("sortNameDesc")}</SelectItem>
+              <SelectItem value="price_asc">{t("sortPriceAsc")}</SelectItem>
+              <SelectItem value="price_desc">{t("sortPriceDesc")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
