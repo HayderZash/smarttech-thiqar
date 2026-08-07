@@ -302,6 +302,19 @@ th{background:#eaf3ec}tfoot td{font-weight:800;background:#f6f2e8}
         </div>
       )}
 
+      {/* national grid schedule */}
+      <div className="mt-4 rounded-2xl border bg-card p-3">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label={t("gridOnHours")}>
+            <NumberField value={gridOn} onValueChange={(v) => setGridOn(v ?? 0)} />
+          </Field>
+          <Field label={t("gridOffHours")}>
+            <NumberField value={gridOff} onValueChange={(v) => setGridOff(v ?? 0)} />
+          </Field>
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">{t("gridNote")}</p>
+      </div>
+
       {/* system settings */}
       <div className="mt-4 rounded-2xl border bg-card p-3">
         <div className="flex items-center justify-between gap-2">
