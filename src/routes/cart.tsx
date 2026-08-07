@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { BadgeCheck, Minus, Plus, Share2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -257,6 +257,28 @@ function CartPage() {
         >
           {user ? t("checkout") : t("loginRequired")}
         </Button>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1 text-xs font-semibold text-accent-foreground">
+            <BadgeCheck className="size-3.5" />
+            {t("cod")}
+          </span>
+          {items.length > 0 && (
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(
+                items
+                  .map((i) => `- ${localized(lang, i.name_ar, i.name_en)} x${i.qty}`)
+                  .join("\n") + `\n${t("total")}: ${formatIQD(total, lang)}`,
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold"
+            >
+              <Share2 className="size-3.5" />
+              {t("shareCart")}
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );
