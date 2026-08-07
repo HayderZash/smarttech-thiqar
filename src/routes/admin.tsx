@@ -1,22 +1,25 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  ChevronDown,
   ClipboardList,
   Image as ImageIcon,
   LayoutGrid,
   Package,
   Plus,
+  Search,
   Settings,
   Ticket,
   Trash2,
   Truck,
   Upload,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { ProductsExcel } from "@/components/ProductsExcel";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,7 +37,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { ORDER_STATUSES, formatIQD, statusLabel, whatsappLink } from "@/lib/format";
 import { localized, useLang } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import { bannersQuery, categoriesQuery, governoratesQuery, productsQuery, settingsQuery } from "@/lib/queries";
+
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
