@@ -75,6 +75,7 @@ function Home() {
   const lastPieces = all.filter((p) => p.stock_qty > 0 && p.stock_qty <= 2).slice(0, 8);
   const featured = all.filter((p) => p.is_featured).slice(0, 8);
   const roots = (categories.data ?? []).filter((c) => !c.parent_id);
+  const catPath = (id: string | null) => categoryPathLabel(lang, categories.data ?? [], id);
 
   return (
     <div>
@@ -125,7 +126,7 @@ function Home() {
         <Section title={t("featured")}>
           <Grid>
             {featured.map((p) => (
-              <ProductCard key={p.id} product={p} />
+              <ProductCard key={p.id} product={p} categoryPath={catPath(p.category_id)} />
             ))}
           </Grid>
         </Section>
@@ -135,7 +136,7 @@ function Home() {
         <Section title={t("latest")} to={{ to: "/search" }}>
           <Grid>
             {latest.map((p) => (
-              <ProductCard key={p.id} product={p} />
+              <ProductCard key={p.id} product={p} categoryPath={catPath(p.category_id)} />
             ))}
           </Grid>
         </Section>
@@ -145,7 +146,7 @@ function Home() {
         <Section title={t("deals")}>
           <Grid>
             {deals.map((p) => (
-              <ProductCard key={p.id} product={p} />
+              <ProductCard key={p.id} product={p} categoryPath={catPath(p.category_id)} />
             ))}
           </Grid>
         </Section>
@@ -155,7 +156,7 @@ function Home() {
         <Section title={t("lastPieces")}>
           <Grid>
             {lastPieces.map((p) => (
-              <ProductCard key={p.id} product={p} />
+              <ProductCard key={p.id} product={p} categoryPath={catPath(p.category_id)} />
             ))}
           </Grid>
         </Section>
