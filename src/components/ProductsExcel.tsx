@@ -139,9 +139,11 @@ export function ProductsExcel({
 
   const handleFile = async (file: File) => {
     setBusy(true);
+    setProgress({ phase: "قراءة الملف…", done: 0, total: 0 });
     try {
       const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
       const sheetName = wb.SheetNames.find((n) => n.toLowerCase() === "products") ?? wb.SheetNames[0]!;
+      setProgress({ phase: "تحليل الصفوف…", done: 0, total: 0 });
       const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[sheetName]!, {
         defval: "",
       });
@@ -190,13 +192,26 @@ export function ProductsExcel({
         return;
       }
 
+      const total = inserts.length + updates.length;
+      let done = 0;
+      const tick = (n: number, phase: string) => {
+        done += n;
+        setProgress({ phase, done, total });
+      };
+
+      setProgress({ phase: "رفع المنتجات الجديدة…", done: 0, total });
       for (let i = 0; i < inserts.length; i += 200) {
-        const { error } = await supabase.from("products").insert(inserts.slice(i, i + 200) as never);
+        const chunk = inserts.slice(i, i + 200);
+        const { error } = await supabase.from("products").insert(chunk as never);
         if (error) throw error;
+        tick(chunk.length, "رفع المنتجات الجديدة…");
+        // Yield so the progress bar can repaint between chunks.
+        await new Promise((r) => setTimeout(r, 0));
       }
       for (const u of updates) {
         const { error } = await supabase.from("products").update(u.values as never).eq("id", u.id);
         if (error) throw error;
+        tick(1, "تحديث المنتجات الموجودة…");
       }
 
       toast.success(
@@ -207,9 +222,11 @@ export function ProductsExcel({
       toast.error(e instanceof Error ? e.message : "فشل استيراد الملف");
     } finally {
       setBusy(false);
+      setProgress(null);
       if (inputRef.current) inputRef.current.value = "";
     }
   };
+
 
   return (
     <div className="space-y-3 rounded-2xl border bg-card p-4">
