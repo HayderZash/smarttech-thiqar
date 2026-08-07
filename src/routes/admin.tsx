@@ -220,6 +220,8 @@ function AdminPage() {
   const [store, setStore] = useState<Record<string, string>>({});
   const [tab, setTab] = useState("orders");
   const [q, setQ] = useState("");
+  const [scope, setScope] = useState<"all" | "products" | "orders">("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
     const stored = localStorage.getItem("admin_tab");
@@ -263,20 +265,64 @@ function AdminPage() {
   const lowStock = (products.data ?? []).filter((p) => p.stock_qty <= 2);
 
   const needle = q.trim().toLowerCase();
-  const visibleOrders = needle
-    ? allOrders.filter((o) =>
-        [o["order_number"], o["customer_name"], o["phone"], o["governorate_name"]]
-          .join(" ")
-          .toLowerCase()
-          .includes(needle),
-      )
-    : allOrders;
   const allProducts = products.data ?? [];
-  const visibleProducts = needle
-    ? allProducts.filter((p) =>
-        [p.name_ar, p.name_en, p.sku].join(" ").toLowerCase().includes(needle),
-      )
-    : allProducts;
+
+  const matchOrder = (o: Record<string, any>) =>
+    !needle ||
+    [o["order_number"], o["customer_name"], o["phone"], o["governorate_name"]]
+      .join(" ")
+      .toLowerCase()
+      .includes(needle);
+
+  const visibleOrders =
+    scope === "products"
+      ? []
+      : allOrders.filter(
+          (o) => matchOrder(o) && (statusFilter === "all" || o["status"] === statusFilter),
+        );
+
+  const visibleProducts =
+    scope === "orders"
+      ? []
+      : allProducts.filter(
+          (p) => !needle || [p.name_ar, p.name_en, p.sku].join(" ").toLowerCase().includes(needle),
+        );
+
+  const searchActive = !!needle || scope !== "all" || statusFilter !== "all";
+
+  // --- quick stats -------------------------------------------------------
+  const now = Date.now();
+  const newOrders24h = allOrders.filter(
+    (o) => now - new Date(o["created_at"]).getTime() < 24 * 3600 * 1000,
+  ).length;
+  const statusCounts = [...ORDER_STATUSES, "cancelled"].map((s) => ({
+    key: s,
+    label: statusLabel(s, lang),
+    count: allOrders.filter((o) => o["status"] === s).length,
+  }));
+  const maxStatus = Math.max(1, ...statusCounts.map((s) => s.count));
+
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now - (6 - i) * 24 * 3600 * 1000);
+    const key = d.toISOString().slice(0, 10);
+    const total = allOrders
+      .filter((o) => o["status"] !== "cancelled" && String(o["created_at"]).slice(0, 10) === key)
+      .reduce((s, o) => s + Number(o["total_amount"]), 0);
+    return { key, label: d.toLocaleDateString("ar-IQ", { weekday: "short" }), total };
+  });
+  const maxDay = Math.max(1, ...days.map((d) => d.total));
+
+  const outOfStock = allProducts.filter((p) => p.stock_qty <= 0).length;
+  const lowStockCount = allProducts.filter((p) => p.stock_qty > 0 && p.stock_qty <= 2).length;
+  const inStock = allProducts.length - outOfStock - lowStockCount;
+  const stockBars = [
+    { label: "متوفر", count: inStock, cls: "bg-primary" },
+    { label: "منخفض", count: lowStockCount, cls: "bg-amber-500" },
+    { label: "نافد", count: outOfStock, cls: "bg-destructive" },
+  ];
+  const stockTotal = Math.max(1, allProducts.length);
+
+
 
   const sections = [
     { value: "orders", label: "الطلبات", desc: "متابعة الطلبات وتحديث حالتها", icon: ClipboardList },
@@ -301,19 +347,46 @@ function AdminPage() {
           <h1 className="truncate text-xl font-bold">لوحة الإدارة</h1>
           <p className="text-xs text-muted-foreground">إدارة المتجر مقسّمة إلى أقسام مستقلة</p>
         </div>
-        <div className="relative w-full sm:w-72">
-          <Search className="pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="بحث سريع عن منتج أو طلب..."
-            aria-label="بحث سريع"
-            className="h-10 rounded-full bg-sand ps-9"
-          />
+        <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-[18rem_auto_auto]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="بحث سريع عن منتج أو طلب..."
+              aria-label="بحث سريع"
+              className="h-10 rounded-full bg-sand ps-9"
+            />
+          </div>
+          <Select value={scope} onValueChange={(v) => setScope(v as typeof scope)}>
+            <SelectTrigger className="h-10 rounded-full" aria-label="نطاق البحث">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">الكل</SelectItem>
+              <SelectItem value="products">المنتجات</SelectItem>
+              <SelectItem value="orders">الطلبات</SelectItem>
+            </SelectContent>
+          </Select>
+          {scope !== "products" && (
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-10 rounded-full" aria-label="حالة الطلب">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">كل الحالات</SelectItem>
+                {[...ORDER_STATUSES, "cancelled"].map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {statusLabel(s, lang)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </header>
 
-      {needle && (
+      {searchActive && (
         <p className="text-xs text-muted-foreground">
           نتائج البحث: {visibleProducts.length} منتج · {visibleOrders.length} طلب
         </p>
@@ -323,10 +396,10 @@ function AdminPage() {
         <h2 className="text-sm font-semibold text-muted-foreground">نظرة عامة</h2>
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[
-            { label: "الطلبات", value: allOrders.length },
+            { label: "طلبات جديدة (24 ساعة)", value: newOrders24h },
             { label: "قيد المراجعة", value: pending },
             { label: "المنتجات", value: allProducts.length },
-            { label: "المبيعات", value: formatIQD(revenue, lang) },
+            { label: "إجمالي المبيعات", value: formatIQD(revenue, lang) },
           ].map((s) => (
             <div key={s.label} className="rounded-2xl border bg-card p-4">
               <p className="text-xs text-muted-foreground">{s.label}</p>
@@ -334,7 +407,67 @@ function AdminPage() {
             </div>
           ))}
         </div>
+
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="rounded-2xl border bg-card p-4">
+            <p className="text-sm font-bold">مبيعات آخر 7 أيام</p>
+            <div className="mt-4 flex h-28 items-end gap-2">
+              {days.map((d) => (
+                <div key={d.key} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+                  <div
+                    className="w-full rounded-t-md bg-primary/80"
+                    style={{ height: `${Math.max(4, (d.total / maxDay) * 90)}%` }}
+                    title={formatIQD(d.total, lang)}
+                  />
+                  <span className="truncate text-[10px] text-muted-foreground">{d.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border bg-card p-4">
+            <p className="text-sm font-bold">الطلبات حسب الحالة</p>
+            <div className="mt-3 space-y-2">
+              {statusCounts.map((s) => (
+                <div key={s.key} className="grid grid-cols-[5rem_minmax(0,1fr)_2rem] items-center gap-2">
+                  <span className="truncate text-xs text-muted-foreground">{s.label}</span>
+                  <span className="h-2 rounded-full bg-muted">
+                    <span
+                      className="block h-2 rounded-full bg-primary"
+                      style={{ width: `${(s.count / maxStatus) * 100}%` }}
+                    />
+                  </span>
+                  <span className="text-end text-xs font-semibold">{s.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border bg-card p-4">
+            <p className="text-sm font-bold">حالة المخزون</p>
+            <div className="mt-3 space-y-2">
+              {stockBars.map((s) => (
+                <div key={s.label} className="grid grid-cols-[4rem_minmax(0,1fr)_2rem] items-center gap-2">
+                  <span className="truncate text-xs text-muted-foreground">{s.label}</span>
+                  <span className="h-2 rounded-full bg-muted">
+                    <span
+                      className={cn("block h-2 rounded-full", s.cls)}
+                      style={{ width: `${(s.count / stockTotal) * 100}%` }}
+                    />
+                  </span>
+                  <span className="text-end text-xs font-semibold">{s.count}</span>
+                </div>
+              ))}
+            </div>
+            {lowStock.length > 0 && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                تنبيه: {lowStock.length} منتج بحاجة إعادة تخزين
+              </p>
+            )}
+          </div>
+        </div>
       </section>
+
 
       <Tabs
         value={tab}
