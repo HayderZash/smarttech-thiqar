@@ -21,7 +21,11 @@ export type Product = {
   images: string[];
   deal_ends_at: string | null;
   created_at: string;
+  /** Original prices before the store-wide markup (admin editing uses these). */
+  base_price: number;
+  base_discount_price: number | null;
 };
+
 
 export type Review = {
   id: string;
