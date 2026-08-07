@@ -877,13 +877,28 @@ function AdminPage() {
               value={pform.catalog_pdf_url}
               onChange={(url) => setPform({ ...pform, catalog_pdf_url: url })}
             />
-            <Button
-              className="sm:col-span-2"
-              disabled={saveProduct.isPending || !pform.name_ar}
-              onClick={() => saveProduct.mutate()}
-            >
-              <Plus className="size-4" /> إضافة المنتج
-            </Button>
+            <div className="flex gap-2 sm:col-span-2">
+              <Button
+                className="flex-1"
+                disabled={saveProduct.isPending || !pform.name_ar}
+                onClick={() => saveProduct.mutate()}
+              >
+                {editingId ? <Pencil className="size-4" /> : <Plus className="size-4" />}
+                {editingId ? "حفظ التعديلات" : "إضافة المنتج"}
+              </Button>
+              {editingId && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEditingId(null);
+                    setPform({ ...emptyProduct });
+                  }}
+                >
+                  إلغاء
+                </Button>
+              )}
+            </div>
+
           </div>
           </Panel>
 
