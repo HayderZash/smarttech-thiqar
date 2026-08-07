@@ -96,9 +96,13 @@ function ProductPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-3">
           <div className="relative overflow-hidden rounded-2xl border bg-sand">
-            <div className="aspect-square overflow-hidden">
+            <div className="relative aspect-square overflow-hidden">
               {gallery[active] ? (
-                <img src={gallery[active]} alt={name} className="h-full w-full scale-[1.5] object-cover object-center" />
+                <img
+                  src={gallery[active]}
+                  alt={name}
+                  className="absolute start-1/2 top-[46%] h-[185%] w-[185%] max-w-none -translate-x-1/2 -translate-y-1/2 object-cover rtl:translate-x-1/2"
+                />
 
               ) : (
                 <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -124,7 +128,11 @@ function ProductPage() {
                     i === active ? "border-primary" : "border-transparent",
                   )}
                 >
-                  <img src={src} alt="" className="h-full w-full object-cover" />
+                  <img
+                    src={src}
+                    alt=""
+                    className="h-full w-full scale-[1.35] object-cover object-center"
+                  />
                 </button>
               ))}
             </div>

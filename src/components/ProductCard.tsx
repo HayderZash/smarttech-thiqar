@@ -66,7 +66,7 @@ export function ProductCard({ product }: { product: Product }) {
               src={product.image_url}
               alt={localized(lang, product.name_ar, product.name_en)}
               loading="lazy"
-              className="h-full w-full scale-[1.5] object-cover object-center transition-transform duration-300 group-hover:scale-[1.58]"
+              className="absolute start-1/2 top-[46%] h-[185%] w-[185%] max-w-none -translate-x-1/2 -translate-y-1/2 object-cover transition-[width,height] duration-300 group-hover:h-[192%] group-hover:w-[192%] rtl:translate-x-1/2"
             />
 
           ) : (
