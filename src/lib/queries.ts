@@ -16,6 +16,18 @@ export type Product = {
   catalog_pdf_url: string | null;
   stock_qty: number;
   is_featured: boolean;
+  images: string[];
+  deal_ends_at: string | null;
+  created_at: string;
+};
+
+export type Review = {
+  id: string;
+  product_id: string;
+  author_name: string;
+  rating: number;
+  comment: string;
+  is_approved: boolean;
   created_at: string;
 };
 
@@ -29,7 +41,7 @@ export type Category = {
 };
 
 const PRODUCT_COLS =
-  "id, sku, name_ar, name_en, description_ar, description_en, price, discount_price, category_id, image_url, catalog_pdf_url, stock_qty, is_featured, created_at";
+  "id, sku, name_ar, name_en, description_ar, description_en, price, discount_price, category_id, image_url, catalog_pdf_url, stock_qty, is_featured, images, deal_ends_at, created_at";
 
 export const productsQuery = queryOptions({
   queryKey: ["products"],
@@ -103,3 +115,54 @@ export function myOrdersQuery(userId: string | undefined) {
     },
   });
 }
+
+export function reviewsQuery(productId: string) {
+  return queryOptions({
+    queryKey: ["reviews", productId],
+    queryFn: async (): Promise<Review[]> => {
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("id, product_id, author_name, rating, comment, is_approved, created_at")
+        .eq("product_id", productId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Review[];
+    },
+  });
+}
+
+export const allReviewsQuery = queryOptions({
+  queryKey: ["reviews", "all"],
+  queryFn: async (): Promise<Review[]> => {
+    const { data, error } = await supabase
+      .from("reviews")
+      .select("id, product_id, author_name, rating, comment, is_approved, created_at")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as Review[];
+  },
+});
+
+export const couponsQuery = queryOptions({
+  queryKey: ["coupons"],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("coupons")
+      .select("id, code, discount_type, discount_value, is_active")
+      .eq("is_active", true);
+    if (error) throw error;
+    return data ?? [];
+  },
+});
+
+export const stockAlertsQuery = queryOptions({
+  queryKey: ["stock_alerts"],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("stock_alerts")
+      .select("id, product_id, phone, is_notified, created_at")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  },
+});
