@@ -1,5 +1,13 @@
+/** Converts Arabic-Indic / Persian digits to plain Latin digits. */
+export function toLatinDigits(input: string) {
+  return input
+    .replace(/[\u0660-\u0669]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[\u06f0-\u06f9]/g, (d) => String(d.charCodeAt(0) - 0x06f0));
+}
+
 export function formatIQD(value: number, lang: "ar" | "en" = "ar") {
-  const n = new Intl.NumberFormat(lang === "ar" ? "ar-IQ" : "en-US", {
+  // Always render Latin (English) digits, even in Arabic UI.
+  const n = new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 0,
   }).format(Math.round(value));
   return `${n} ${lang === "ar" ? "د.ع" : "IQD"}`;

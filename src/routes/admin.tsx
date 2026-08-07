@@ -17,6 +17,7 @@ import {
 import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
+import { NumberField } from "@/components/NumberField";
 import { ProductsExcel } from "@/components/ProductsExcel";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -35,7 +36,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { ORDER_STATUSES, formatIQD, statusLabel, whatsappLink } from "@/lib/format";
+import { ORDER_STATUSES, formatIQD, statusLabel, toLatinDigits, whatsappLink } from "@/lib/format";
 import { localized, useLang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { bannersQuery, categoriesQuery, governoratesQuery, productsQuery, settingsQuery } from "@/lib/queries";
@@ -308,7 +309,7 @@ function AdminPage() {
     const total = allOrders
       .filter((o) => o["status"] !== "cancelled" && String(o["created_at"]).slice(0, 10) === key)
       .reduce((s, o) => s + Number(o["total_amount"]), 0);
-    return { key, label: d.toLocaleDateString("ar-IQ", { weekday: "short" }), total };
+    return { key, label: d.toLocaleDateString("ar-IQ-u-nu-latn", { weekday: "short" }), total };
   });
   const maxDay = Math.max(1, ...days.map((d) => d.total));
 
@@ -511,7 +512,7 @@ function AdminPage() {
                 </h3>
 
                 <span className="text-xs text-muted-foreground">
-                  {new Date(o["created_at"]).toLocaleString("ar-IQ")}
+                  {new Date(o["created_at"]).toLocaleString("ar-IQ-u-nu-latn")}
                 </span>
               </div>
               <p className="text-sm text-muted-foreground">
@@ -631,28 +632,24 @@ function AdminPage() {
             </div>
             <div className="space-y-2">
               <Label>السعر</Label>
-              <Input
-                type="number"
+              <NumberField
                 value={pform.price}
-                onChange={(e) => setPform({ ...pform, price: Number(e.target.value) })}
+                onValueChange={(v) => setPform({ ...pform, price: v ?? 0 })}
               />
             </div>
             <div className="space-y-2">
               <Label>سعر الخصم</Label>
-              <Input
-                type="number"
-                value={pform.discount_price ?? ""}
-                onChange={(e) =>
-                  setPform({ ...pform, discount_price: e.target.value ? Number(e.target.value) : null })
-                }
+              <NumberField
+                allowEmpty
+                value={pform.discount_price}
+                onValueChange={(v) => setPform({ ...pform, discount_price: v })}
               />
             </div>
             <div className="space-y-2">
               <Label>الكمية</Label>
-              <Input
-                type="number"
+              <NumberField
                 value={pform.stock_qty}
-                onChange={(e) => setPform({ ...pform, stock_qty: Number(e.target.value) })}
+                onValueChange={(v) => setPform({ ...pform, stock_qty: v ?? 0 })}
               />
             </div>
             <div className="flex items-center gap-3 pt-7">
@@ -729,12 +726,12 @@ function AdminPage() {
                   </p>
                 </div>
                 <Input
-                  type="number"
+                  type="text" inputMode="numeric" dir="ltr"
                   defaultValue={p.stock_qty}
                   className="w-20"
                   aria-label="stock"
                   onBlur={async (e) => {
-                    const v = Number(e.target.value);
+                    const v = Number(toLatinDigits(e.target.value));
                     if (v === p.stock_qty) return;
                     const { error } = await supabase
                       .from("products")
@@ -858,12 +855,12 @@ function AdminPage() {
             <div key={g.id} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
               <span className="flex-1 text-sm font-medium">{g.name_ar}</span>
               <Input
-                type="number"
+                type="text" inputMode="numeric" dir="ltr"
                 defaultValue={Number(g.shipping_cost)}
                 className="w-32"
                 aria-label="shipping"
                 onBlur={async (e) => {
-                  const v = Number(e.target.value);
+                  const v = Number(toLatinDigits(e.target.value));
                   if (v === Number(g.shipping_cost)) return;
                   const { error } = await supabase
                     .from("governorates")
@@ -978,11 +975,11 @@ function AdminPage() {
             </div>
             <div className="space-y-2">
               <Label>القيمة</Label>
-              <Input
-                type="number"
+              <NumberField
                 value={couponForm.discount_value}
-                onChange={(e) => setCouponForm({ ...couponForm, discount_value: Number(e.target.value) })}
+                onValueChange={(v) => setCouponForm({ ...couponForm, discount_value: v ?? 0 })}
               />
+
             </div>
             <Button
               className="sm:col-span-3"
