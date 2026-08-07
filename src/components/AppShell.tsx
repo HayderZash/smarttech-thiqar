@@ -12,11 +12,26 @@ import {
   Download,
   X,
   Shield,
+  Menu,
+  Phone,
+  Mail,
+  MapPin,
+  Clock,
+  Facebook,
+  Instagram,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
 import { useLang } from "@/lib/i18n";
@@ -31,6 +46,7 @@ const NAV = [
   { to: "/orders", key: "orders", icon: ClipboardList },
   { to: "/account", key: "account", icon: User },
 ] as const;
+
 
 function InstallBanner() {
   const { t } = useLang();
