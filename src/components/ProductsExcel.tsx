@@ -20,6 +20,9 @@ type Product = {
   description_en: string;
   price: number;
   discount_price: number | null;
+  base_price?: number;
+  base_discount_price?: number | null;
+
   stock_qty: number;
   is_featured: boolean;
   image_url: string | null;
@@ -132,8 +135,9 @@ export function ProductsExcel({
       name_en: p.name_en,
       description_ar: p.description_ar,
       description_en: p.description_en,
-      price: p.price,
-      discount_price: p.discount_price ?? "",
+      price: p.base_price ?? p.price,
+      discount_price: (p.base_discount_price ?? p.discount_price) ?? "",
+
       stock_qty: p.stock_qty,
       is_featured: p.is_featured ? "نعم" : "لا",
       category: (p.category_id && byId.get(p.category_id)) || "",

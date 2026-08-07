@@ -18,6 +18,26 @@ const placeOrderSchema = z.object({
 
 const couponSchema = z.object({ code: z.string().trim().min(1).max(60), subtotal: z.number().min(0) });
 
+const PRICE_STEP = 250;
+
+/** Adds the store-wide markup then rounds to the nearest 250 IQD (never below base). */
+function applyMarkup(base: number, percent: number) {
+  const b = Number(base) || 0;
+  if (!percent || b <= 0) return b;
+  return Math.max(b, Math.round((b * (1 + percent / 100)) / PRICE_STEP) * PRICE_STEP);
+}
+
+async function getMarkup(supabase: {
+  from: (t: string) => any;
+}): Promise<number> {
+  const { data } = await supabase
+    .from("store_settings")
+    .select("value")
+    .eq("key", "price_markup_percent")
+    .maybeSingle();
+  return Number(data?.value ?? 0) || 0;
+}
+
 function computeDiscount(
   coupon: { discount_type: string; discount_value: number } | null,
   subtotal: number,
@@ -29,6 +49,7 @@ function computeDiscount(
       : Number(coupon.discount_value);
   return Math.max(0, Math.min(subtotal, Math.round(raw)));
 }
+
 
 export const validateCoupon = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -59,14 +80,18 @@ export const placeOrder = createServerFn({ method: "POST" })
     if (prodErr) throw new Error(prodErr.message);
     if (!products?.length) throw new Error("No valid products in the order");
 
+    const markup = await getMarkup(supabase);
+
     const lines = data.items
       .map((line) => {
         const p = products.find((x) => x.id === line.product_id);
         if (!p) return null;
-        const unit =
+        const base =
           p.discount_price != null && Number(p.discount_price) > 0 && Number(p.discount_price) < Number(p.price)
             ? Number(p.discount_price)
             : Number(p.price);
+        const unit = applyMarkup(base, markup);
+
         return {
           product_id: p.id,
           product_name: p.name_ar || p.name_en,
@@ -436,12 +461,14 @@ export const addOrderItem = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!product) throw new Error("Product not found");
 
-    const unit =
+    const baseUnit =
       product.discount_price != null &&
       Number(product.discount_price) > 0 &&
       Number(product.discount_price) < Number(product.price)
         ? Number(product.discount_price)
         : Number(product.price);
+    const unit = applyMarkup(baseUnit, await getMarkup(supabase));
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
