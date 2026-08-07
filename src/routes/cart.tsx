@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { BadgeCheck, Minus, Plus, Share2, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -49,11 +49,20 @@ function CartPage() {
   const [time, setTime] = useState("");
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
+  const [fullName, setFullName] = useState(profile?.full_name ?? "");
+  const [phone, setPhone] = useState(profile?.phone ?? "");
   const [busy, setBusy] = useState(false);
 
   const gov = (governorates ?? []).find((g) => g.id === govId);
   const shipping = Number(gov?.shipping_cost ?? 0);
   const total = Math.max(0, subtotal - discount) + shipping;
+
+  useEffect(() => {
+    if (profile) {
+      setFullName((n) => n || profile.full_name);
+      setPhone((p) => p || profile.phone);
+    }
+  }, [profile]);
 
   if (items.length === 0) {
     return (
@@ -102,6 +111,16 @@ function CartPage() {
       toast.error(t("landmark"));
       return;
     }
+    const trimmedName = fullName.trim();
+    if (trimmedName.length < 2) {
+      toast.error(t("nameRequired"));
+      return;
+    }
+    const cleanedPhone = phone.replace(/\D/g, "");
+    if (cleanedPhone.length < 10) {
+      toast.error(t("invalidPhone"));
+      return;
+    }
 
     setBusy(true);
     try {
@@ -112,8 +131,8 @@ function CartPage() {
           landmark: landmark.trim(),
           preferred_delivery_time: time.trim(),
           coupon_code: coupon.trim() || null,
-          full_name: profile?.full_name || "",
-          phone: profile?.phone || "",
+          full_name: trimmedName,
+          phone: cleanedPhone,
         },
       });
       clear();
@@ -185,6 +204,31 @@ function CartPage() {
 
       <div className="space-y-4 rounded-2xl border bg-card p-4 lg:sticky lg:top-20 lg:self-start">
         <h2 className="text-base font-bold">{t("orderSummary")}</h2>
+
+        <div className="space-y-2">
+          <Label htmlFor="co-name">{t("fullName")}</Label>
+          <Input
+            id="co-name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            maxLength={120}
+            placeholder={t("fullName")}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="co-phone">{t("phone")}</Label>
+          <Input
+            id="co-phone"
+            type="tel"
+            inputMode="tel"
+            dir="ltr"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            maxLength={20}
+            placeholder="07XXXXXXXXX"
+          />
+        </div>
 
         <div className="space-y-2">
           <Label>{t("governorate")}</Label>
