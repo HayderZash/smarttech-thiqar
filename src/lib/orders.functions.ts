@@ -18,6 +18,26 @@ const placeOrderSchema = z.object({
 
 const couponSchema = z.object({ code: z.string().trim().min(1).max(60), subtotal: z.number().min(0) });
 
+const PRICE_STEP = 250;
+
+/** Adds the store-wide markup then rounds to the nearest 250 IQD (never below base). */
+function applyMarkup(base: number, percent: number) {
+  const b = Number(base) || 0;
+  if (!percent || b <= 0) return b;
+  return Math.max(b, Math.round((b * (1 + percent / 100)) / PRICE_STEP) * PRICE_STEP);
+}
+
+async function getMarkup(supabase: {
+  from: (t: string) => any;
+}): Promise<number> {
+  const { data } = await supabase
+    .from("store_settings")
+    .select("value")
+    .eq("key", "price_markup_percent")
+    .maybeSingle();
+  return Number(data?.value ?? 0) || 0;
+}
+
 function computeDiscount(
   coupon: { discount_type: string; discount_value: number } | null,
   subtotal: number,
@@ -29,6 +49,7 @@ function computeDiscount(
       : Number(coupon.discount_value);
   return Math.max(0, Math.min(subtotal, Math.round(raw)));
 }
+
 
 export const validateCoupon = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
