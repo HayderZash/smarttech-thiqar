@@ -18,25 +18,22 @@ const placeOrderSchema = z.object({
 
 const couponSchema = z.object({ code: z.string().trim().min(1).max(60), subtotal: z.number().min(0) });
 
-const PRICE_STEP = 250;
+import { applyPricing, parsePriceTiers, type PriceTier } from "@/lib/format";
 
-/** Adds the store-wide markup then rounds to the nearest 250 IQD (never below base). */
-function applyMarkup(base: number, percent: number) {
-  const b = Number(base) || 0;
-  if (!percent || b <= 0) return b;
-  return Math.max(b, Math.round((b * (1 + percent / 100)) / PRICE_STEP) * PRICE_STEP);
-}
-
-async function getMarkup(supabase: {
+/** Reads the tiered pricing rules stored in store_settings. */
+async function getPricingTiers(supabase: {
   from: (t: string) => any;
-}): Promise<number> {
+}): Promise<PriceTier[]> {
   const { data } = await supabase
     .from("store_settings")
-    .select("value")
-    .eq("key", "price_markup_percent")
-    .maybeSingle();
-  return Number(data?.value ?? 0) || 0;
+    .select("key, value")
+    .in("key", ["price_tiers", "price_markup_percent"]);
+  const map = Object.fromEntries(
+    ((data ?? []) as { key: string; value: string }[]).map((r) => [r.key, r.value]),
+  );
+  return parsePriceTiers(map["price_tiers"], Number(map["price_markup_percent"] ?? 0) || 0);
 }
+
 
 function computeDiscount(
   coupon: { discount_type: string; discount_value: number } | null,
