@@ -19,6 +19,10 @@ import {
   Clock,
   Facebook,
   Instagram,
+  Heart,
+  Tag,
+  PackageSearch,
+  Sun,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -45,6 +49,13 @@ const NAV = [
   { to: "/cart", key: "cart", icon: ShoppingCart },
   { to: "/orders", key: "orders", icon: ClipboardList },
   { to: "/account", key: "account", icon: User },
+] as const;
+
+const EXTRA_NAV = [
+  { to: "/deals", key: "dealsPage", icon: Tag },
+  { to: "/wishlist", key: "wishlist", icon: Heart },
+  { to: "/track", key: "trackOrder", icon: PackageSearch },
+  { to: "/solar", key: "solarCalc", icon: Sun },
 ] as const;
 
 
@@ -171,6 +182,21 @@ function SideMenu({
 
         <nav className="space-y-1 p-3">
           {NAV.map(({ to, key, icon: Icon }) => (
+            <Link
+              key={to}
+              to={to}
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-sand hover:text-foreground",
+                pathname === to && "bg-primary-soft text-accent-foreground",
+              )}
+            >
+              <Icon className="size-4 shrink-0" />
+              {t(key)}
+            </Link>
+          ))}
+          <div className="my-2 border-t" />
+          {EXTRA_NAV.map(({ to, key, icon: Icon }) => (
             <Link
               key={to}
               to={to}
