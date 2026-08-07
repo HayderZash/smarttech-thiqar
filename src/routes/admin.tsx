@@ -309,7 +309,7 @@ function AdminPage() {
     const total = allOrders
       .filter((o) => o["status"] !== "cancelled" && String(o["created_at"]).slice(0, 10) === key)
       .reduce((s, o) => s + Number(o["total_amount"]), 0);
-    return { key, label: d.toLocaleDateString("ar-IQ", { weekday: "short" }), total };
+    return { key, label: d.toLocaleDateString("ar-IQ-u-nu-latn", { weekday: "short" }), total };
   });
   const maxDay = Math.max(1, ...days.map((d) => d.total));
 
@@ -512,7 +512,7 @@ function AdminPage() {
                 </h3>
 
                 <span className="text-xs text-muted-foreground">
-                  {new Date(o["created_at"]).toLocaleString("ar-IQ")}
+                  {new Date(o["created_at"]).toLocaleString("ar-IQ-u-nu-latn")}
                 </span>
               </div>
               <p className="text-sm text-muted-foreground">

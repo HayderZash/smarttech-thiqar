@@ -109,7 +109,7 @@ function OrdersPage() {
               {t("orderNo")} #{o["order_number"]}
             </h2>
             <span className="text-xs text-muted-foreground">
-              {new Date(o["created_at"]).toLocaleDateString(lang === "ar" ? "ar-IQ" : "en-GB")}
+              {new Date(o["created_at"]).toLocaleDateString(lang === "ar" ? "ar-IQ-u-nu-latn" : "en-GB")}
             </span>
           </header>
 
