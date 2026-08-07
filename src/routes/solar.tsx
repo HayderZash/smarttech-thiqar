@@ -369,7 +369,7 @@ th{background:#eaf3ec}tfoot td{font-weight:800;background:#f6f2e8}
 
       <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
         {[
-          { label: t("dailyEnergy"), value: `${(dailyWh / 1000).toFixed(2)} kWh` },
+          { label: t("coveredEnergy"), value: `${(dailyWh / 1000).toFixed(2)} kWh` },
           { label: t("peakLoad"), value: `${(peakW / 1000).toFixed(2)} kW` },
           { label: `${t("panelsNeeded")} (${panelWatt}W)`, value: String(panels) },
           {
