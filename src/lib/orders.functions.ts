@@ -77,7 +77,7 @@ export const placeOrder = createServerFn({ method: "POST" })
     if (prodErr) throw new Error(prodErr.message);
     if (!products?.length) throw new Error("No valid products in the order");
 
-    const markup = await getMarkup(supabase);
+    const tiers = await getPricingTiers(supabase);
 
     const lines = data.items
       .map((line) => {
@@ -87,7 +87,7 @@ export const placeOrder = createServerFn({ method: "POST" })
           p.discount_price != null && Number(p.discount_price) > 0 && Number(p.discount_price) < Number(p.price)
             ? Number(p.discount_price)
             : Number(p.price);
-        const unit = applyMarkup(base, markup);
+        const unit = applyPricing(base, tiers);
 
         return {
           product_id: p.id,
@@ -464,7 +464,7 @@ export const addOrderItem = createServerFn({ method: "POST" })
       Number(product.discount_price) < Number(product.price)
         ? Number(product.discount_price)
         : Number(product.price);
-    const unit = applyMarkup(baseUnit, await getMarkup(supabase));
+    const unit = applyPricing(baseUnit, await getPricingTiers(supabase));
 
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
