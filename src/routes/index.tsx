@@ -2,8 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 
+import { NewsCarousel } from "@/components/NewsCarousel";
 import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard";
 import { discountPercent } from "@/lib/format";
+import { CategoryIcon } from "@/lib/category-icons";
 import { localized, useLang } from "@/lib/i18n";
 import { bannersQuery, categoriesQuery, productsQuery } from "@/lib/queries";
 
