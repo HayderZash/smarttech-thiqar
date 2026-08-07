@@ -63,8 +63,13 @@ export function NotificationsBell() {
 
   useEffect(() => {
     if (!user?.id) return;
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-      void Notification.requestPermission();
+    if (typeof window !== "undefined") {
+      if ("serviceWorker" in navigator) {
+        void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+      }
+      if ("Notification" in window && Notification.permission === "default") {
+        void Notification.requestPermission();
+      }
     }
     const channel = supabase
       .channel(`notifications-${user.id}`)
@@ -73,7 +78,8 @@ export function NotificationsBell() {
         { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
         (payload) => {
           const row = payload.new as Notif;
-          pushToDevice(row.title, row.body);
+          void pushToDevice(row.title, row.body);
+
           void queryClient.invalidateQueries({ queryKey: ["notifications"] });
           void queryClient.invalidateQueries({ queryKey: ["orders"] });
         },
