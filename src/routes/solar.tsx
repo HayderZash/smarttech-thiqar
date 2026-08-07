@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, RotateCcw, Settings2, Sun, Trash2 } from "lucide-react";
+import { FileDown, Plus, RotateCcw, Settings2, Sun, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { NumberField } from "@/components/NumberField";
