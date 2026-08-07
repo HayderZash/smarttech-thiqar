@@ -27,9 +27,15 @@ function DealsPage() {
   const { t } = useLang();
   const { data: products } = useQuery(productsQuery);
 
+  const [page, setPage] = useState(1);
+
   const deals = (products ?? [])
     .filter((p) => discountPercent(p) > 0)
     .sort((a, b) => discountPercent(b) - discountPercent(a));
+
+  const totalPages = Math.max(1, Math.ceil(deals.length / PER_PAGE));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = deals.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
 
   return (
     <div>
@@ -42,11 +48,14 @@ function DealsPage() {
             {t("noDeals")}
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {deals.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {pageItems.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+            <Pagination page={safePage} totalPages={totalPages} onPage={setPage} />
+          </>
         )}
       </section>
     </div>
