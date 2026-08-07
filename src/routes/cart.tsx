@@ -49,6 +49,8 @@ function CartPage() {
   const [time, setTime] = useState("");
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
+  const [fullName, setFullName] = useState(profile?.full_name ?? "");
+  const [phone, setPhone] = useState(profile?.phone ?? "");
   const [busy, setBusy] = useState(false);
 
   const gov = (governorates ?? []).find((g) => g.id === govId);
