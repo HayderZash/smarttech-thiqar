@@ -688,8 +688,11 @@ function AdminPage() {
               <Plus className="size-4" /> إضافة قسم
             </Button>
           </div>
-          <div className="space-y-2">
+          </Panel>
+          <Panel id="cat-list" title="قائمة الأقسام" desc="حذف الأقسام غير المستخدمة">
+          <div className="space-y-3">
             {(categories.data ?? []).map((c) => (
+
               <div key={c.id} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
                 <span className="flex-1 text-sm font-medium">
                   {c.parent_id ? "— " : ""}
