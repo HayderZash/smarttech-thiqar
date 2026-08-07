@@ -366,16 +366,17 @@ function AdminPage() {
 
 
         {/* ORDERS */}
-        <TabsContent value="orders" className="space-y-3">
-          {allOrders.length === 0 && (
+        <TabsContent value="orders" className="space-y-4">
+          {visibleOrders.length === 0 && (
             <p className="py-10 text-center text-sm text-muted-foreground">لا توجد طلبات</p>
           )}
-          {allOrders.map((o) => (
+          {visibleOrders.map((o) => (
             <div key={o["id"]} className="space-y-3 rounded-2xl border bg-card p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="font-bold">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                <h3 className="truncate text-sm font-bold">
                   #{o["order_number"]} — {o["customer_name"]}
-                </h2>
+                </h3>
+
                 <span className="text-xs text-muted-foreground">
                   {new Date(o["created_at"]).toLocaleString("ar-IQ")}
                 </span>
