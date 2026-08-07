@@ -332,7 +332,7 @@ function SolarPage() {
                     >
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-semibold">
-                          {localized(i.c, "name", lang)}
+                          {localized(lang, i.c.name_ar, i.c.name_en)}
                         </span>
                         <span className="block text-[11px] text-muted-foreground" dir="ltr">
                           {formatIQD(Number(i.c.price), lang)} ×{i.qty}
