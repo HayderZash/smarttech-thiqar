@@ -10,6 +10,7 @@ import {
   Search,
   Settings,
   Star,
+  Sun,
   Ticket,
   Trash2,
   Truck,
