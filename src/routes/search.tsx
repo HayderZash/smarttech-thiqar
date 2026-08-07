@@ -70,8 +70,11 @@ function SearchPage() {
     : undefined;
   const subCats = activeCat ? allCats.filter((c) => c.parent_id === activeCat.id) : [];
 
+  const uncategorized = category === "none";
+  const generalLabel = lang === "ar" ? "العام" : "General";
   const catIds =
-    category === "all"
+
+    category === "all" || uncategorized
       ? null
       : [category, ...allCats.filter((c) => c.parent_id === category).map((c) => c.id)];
 
@@ -79,7 +82,9 @@ function SearchPage() {
   const results = (products.data ?? [])
     .filter((p) => {
       const price = effectivePrice(p);
+      if (uncategorized && p.category_id) return false;
       if (catIds && !(p.category_id && catIds.includes(p.category_id))) return false;
+
       if (price < lo || price > Math.max(hi, lo)) return false;
       if (!term) return true;
       return `${p.name_ar} ${p.name_en} ${p.sku}`.toLowerCase().includes(term);
@@ -133,14 +138,20 @@ function SearchPage() {
             <BreadcrumbPage>
               {activeCat
                 ? localized(lang, activeCat.name_ar, activeCat.name_en)
-                : t("allCategories")}
+                : uncategorized
+                  ? generalLabel
+                  : t("allCategories")}
             </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
 
       <h1 className="mb-4 text-xl font-bold">
-        {activeCat ? localized(lang, activeCat.name_ar, activeCat.name_en) : t("searchTitle")}
+        {activeCat
+          ? localized(lang, activeCat.name_ar, activeCat.name_en)
+          : uncategorized
+            ? generalLabel
+            : t("searchTitle")}
         {term && <span className="text-muted-foreground"> — {q}</span>}
       </h1>
 
@@ -178,6 +189,8 @@ function SearchPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("allCategories")}</SelectItem>
+              <SelectItem value="none">{generalLabel}</SelectItem>
+
               {allCats.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {localized(lang, c.name_ar, c.name_en)}

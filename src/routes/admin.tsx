@@ -20,6 +20,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { NumberField } from "@/components/NumberField";
+import { BulkDeleteProducts } from "@/components/BulkDeleteProducts";
 import { ProductsExcel } from "@/components/ProductsExcel";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -772,9 +773,28 @@ function AdminPage() {
             </div>
           )}
 
-          <Panel id="product-list" title={`قائمة المنتجات (${visibleProducts.length})`} desc="تعديل المخزون أو الحذف">
+          <BulkDeleteProducts
+            categories={(categories.data ?? []) as never}
+            counts={{
+              all: allProducts.length,
+              none: allProducts.filter((p) => !p.category_id).length,
+              ...Object.fromEntries(
+                (categories.data ?? []).map((c) => [
+                  c.id,
+                  allProducts.filter((p) => {
+                    if (p.category_id === c.id) return true;
+                    const parent = (categories.data ?? []).find((x) => x.id === p.category_id);
+                    return parent?.parent_id === c.id;
+                  }).length,
+                ]),
+              ),
+            }}
+            onDone={() => invalidate(["products"])}
+          />
+
+          <Panel id="product-list" title={`قائمة المنتجات (${visibleProducts.length})`} desc="يُعرض أول 300 منتج — استخدم البحث للوصول لبقية المنتجات">
           <div className="space-y-3">
-            {visibleProducts.map((p) => (
+            {visibleProducts.slice(0, 300).map((p) => (
 
               <div key={p.id} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
                 <div className="size-12 shrink-0 overflow-hidden rounded-xl bg-sand">
