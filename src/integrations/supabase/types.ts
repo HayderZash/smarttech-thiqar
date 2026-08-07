@@ -145,9 +145,48 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_read: boolean
+          order_id: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          order_id?: string | null
+          title?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          order_id?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           id: string
+          is_unavailable: boolean
           order_id: string
           product_id: string | null
           product_name: string
@@ -156,6 +195,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          is_unavailable?: boolean
           order_id: string
           product_id?: string | null
           product_name?: string
@@ -164,6 +204,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          is_unavailable?: boolean
           order_id?: string
           product_id?: string | null
           product_name?: string
@@ -198,6 +239,7 @@ export type Database = {
           governorate_name: string
           id: string
           landmark: string
+          needs_customer_action: boolean
           notes: string
           order_number: number
           phone: string
@@ -217,6 +259,7 @@ export type Database = {
           governorate_name?: string
           id?: string
           landmark?: string
+          needs_customer_action?: boolean
           notes?: string
           order_number?: number
           phone?: string
@@ -236,6 +279,7 @@ export type Database = {
           governorate_name?: string
           id?: string
           landmark?: string
+          needs_customer_action?: boolean
           notes?: string
           order_number?: number
           phone?: string
