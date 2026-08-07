@@ -24,6 +24,7 @@ import { toast } from "sonner";
 
 import { NumberField } from "@/components/NumberField";
 import { PricingTiersEditor } from "@/components/PricingTiersEditor";
+import { announceDeal, createCoupon, updateOrderStatus } from "@/lib/admin.functions";
 import { BulkDeleteProducts } from "@/components/BulkDeleteProducts";
 import { CategoriesExcel } from "@/components/CategoriesExcel";
 import { ProductsExcel } from "@/components/ProductsExcel";
@@ -232,6 +233,7 @@ function Panel({
   action,
   children,
   defaultOpen = true,
+  openSignal = 0,
 }: {
   id: string;
   title: string;
@@ -239,6 +241,8 @@ function Panel({
   action?: ReactNode;
   children: ReactNode;
   defaultOpen?: boolean;
+  /** Increment to force the panel open (e.g. when editing starts). */
+  openSignal?: number;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -246,6 +250,10 @@ function Panel({
     const stored = localStorage.getItem(`admin_panel_${id}`);
     if (stored === "0" || stored === "1") setOpen(stored === "1");
   }, [id]);
+
+  useEffect(() => {
+    if (openSignal > 0) setOpen(true);
+  }, [openSignal]);
 
   return (
     <Collapsible
@@ -394,10 +402,19 @@ function AdminPage() {
   });
   const [prodPage, setProdPage] = useState(1);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [couponForm, setCouponForm] = useState({ code: "", discount_type: "fixed", discount_value: 0 });
+  const [editSignal, setEditSignal] = useState(0);
+  const [couponForm, setCouponForm] = useState({
+    code: "",
+    discount_type: "fixed",
+    discount_value: 0,
+    expires_at: "",
+  });
   const [solarForm, setSolarForm] = useState({ ...emptySolar });
   const [store, setStore] = useState<Record<string, string>>({});
   const markUnavailable = useServerFn(setItemUnavailable);
+  const changeStatus = useServerFn(updateOrderStatus);
+  const addCoupon = useServerFn(createCoupon);
+  const sendDealNotice = useServerFn(announceDeal);
   const [tab, setTab] = useState("orders");
   const [q, setQ] = useState("");
   const [scope, setScope] = useState<"all" | "products" | "orders">("all");
@@ -442,6 +459,8 @@ function AdminPage() {
 
   const startEdit = (p: Product) => {
     setEditingId(p.id);
+    setEditSignal((n) => n + 1);
+    setTab("products");
     setPform({
       sku: p.sku ?? "",
       name_ar: p.name_ar ?? "",
@@ -462,7 +481,13 @@ function AdminPage() {
       images_text: (p.images ?? []).join("\n"),
       deal_ends_at: p.deal_ends_at ? new Date(p.deal_ends_at).toISOString().slice(0, 16) : "",
     });
-    document.getElementById("product-new")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(
+      () =>
+        document
+          .getElementById("product-new")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      80,
+    );
   };
 
 
@@ -813,14 +838,14 @@ function AdminPage() {
                 <Select
                   value={o["status"]}
                   onValueChange={async (status) => {
-                    const { error } = await supabase
-                      .from("orders")
-                      .update({ status })
-                      .eq("id", o["id"]);
-                    if (error) toast.error(error.message);
-                    else {
-                      invalidate(["admin-orders", "orders"]);
-                      toast.success("تم التحديث");
+                    try {
+                      await changeStatus({
+                        data: { order_id: String(o["id"]), status: status as never },
+                      });
+                      invalidate(["admin-orders", "orders", "notifications"]);
+                      toast.success("تم التحديث وإرسال إشعار للزبون");
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "خطأ");
                     }
                   }}
                 >
@@ -875,6 +900,7 @@ function AdminPage() {
           />
           <Panel
             id="product-new"
+            openSignal={editSignal}
             title={editingId ? "تعديل منتج" : "إضافة منتج"}
             desc={editingId ? "عدّل بيانات المنتج ثم احفظ" : "أدخل بيانات المنتج الجديد"}
           >
@@ -1451,15 +1477,35 @@ function AdminPage() {
               />
 
             </div>
+            <div className="space-y-2 sm:col-span-3">
+              <Label>تاريخ وساعة الانتهاء (اختياري)</Label>
+              <Input
+                type="datetime-local"
+                dir="ltr"
+                value={couponForm.expires_at}
+                onChange={(e) => setCouponForm({ ...couponForm, expires_at: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                يتوقف الكوبون تلقائياً بعد هذا الوقت.
+              </p>
+            </div>
             <Button
               className="sm:col-span-3"
               disabled={!couponForm.code}
               onClick={async () => {
-                const { error } = await supabase.from("coupons").insert(couponForm);
-                if (error) toast.error(error.message);
-                else {
-                  setCouponForm({ code: "", discount_type: "fixed", discount_value: 0 });
-                  toast.success("تمت الإضافة");
+                try {
+                  await addCoupon({
+                    data: {
+                      code: couponForm.code,
+                      discount_type: couponForm.discount_type as "fixed" | "percent",
+                      discount_value: Number(couponForm.discount_value) || 0,
+                      expires_at: couponForm.expires_at || null,
+                    },
+                  });
+                  setCouponForm({ code: "", discount_type: "fixed", discount_value: 0, expires_at: "" });
+                  toast.success("تمت الإضافة وإرسال إشعار للزبائن");
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "خطأ");
                 }
               }}
             >
