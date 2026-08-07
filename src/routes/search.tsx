@@ -1,9 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Label } from "@/components/ui/label";
+
 import { Slider } from "@/components/ui/slider";
 import {
   Select,
