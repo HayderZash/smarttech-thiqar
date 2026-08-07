@@ -103,10 +103,63 @@ function SearchPage() {
 
   return (
     <div>
+      <Breadcrumb className="mb-3">
+        <BreadcrumbList className="text-xs sm:text-sm">
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link to="/">{t("home")}</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator className="rtl:rotate-180" />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link to="/categories">{t("categories")}</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          {parentCat && (
+            <>
+              <BreadcrumbSeparator className="rtl:rotate-180" />
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to="/search" search={{ cat: parentCat.id }}>
+                    {localized(lang, parentCat.name_ar, parentCat.name_en)}
+                  </Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+            </>
+          )}
+          <BreadcrumbSeparator className="rtl:rotate-180" />
+          <BreadcrumbItem>
+            <BreadcrumbPage>
+              {activeCat
+                ? localized(lang, activeCat.name_ar, activeCat.name_en)
+                : t("allCategories")}
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
       <h1 className="mb-4 text-xl font-bold">
         {activeCat ? localized(lang, activeCat.name_ar, activeCat.name_en) : t("searchTitle")}
         {term && <span className="text-muted-foreground"> — {q}</span>}
       </h1>
+
+      {subCats.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          <span className="self-center text-xs text-muted-foreground">{t("subCategories")}:</span>
+          {subCats.map((s) => (
+            <Link
+              key={s.id}
+              to="/search"
+              search={{ cat: s.id }}
+              className="rounded-full bg-sand px-3 py-1 text-xs font-medium hover:bg-primary-soft"
+            >
+              {localized(lang, s.name_ar, s.name_en)}
+            </Link>
+          ))}
+        </div>
+      )}
+
 
       <div className="mb-5 grid gap-4 rounded-2xl border bg-card p-4 sm:grid-cols-3">
         <div className="space-y-2">
