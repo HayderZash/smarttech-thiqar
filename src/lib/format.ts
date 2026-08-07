@@ -27,11 +27,24 @@ export function statusLabel(status: string, lang: "ar" | "en") {
   return map[status]?.[lang] ?? status;
 }
 
+/** Store-wide markup: adds a percentage then rounds to the nearest 250 IQD. */
+export const PRICE_STEP = 250;
+
+export function applyMarkup(base: number, percent: number) {
+  const b = Number(base) || 0;
+  if (!percent || b <= 0) return b;
+  const raised = b * (1 + percent / 100);
+  const rounded = Math.round(raised / PRICE_STEP) * PRICE_STEP;
+  // Never go below the original price (cheap items may round back down).
+  return Math.max(b, rounded);
+}
+
 export function effectivePrice(p: { price: number; discount_price: number | null }) {
   return p.discount_price != null && p.discount_price > 0 && p.discount_price < p.price
     ? p.discount_price
     : p.price;
 }
+
 
 export function discountPercent(p: { price: number; discount_price: number | null }) {
   if (!p.discount_price || p.discount_price >= p.price || p.price <= 0) return 0;
