@@ -251,11 +251,13 @@ export type Database = {
           catalog_pdf_url: string | null
           category_id: string | null
           created_at: string
+          deal_ends_at: string | null
           description_ar: string
           description_en: string
           discount_price: number | null
           id: string
           image_url: string | null
+          images: string[]
           is_featured: boolean
           name_ar: string
           name_en: string
@@ -267,11 +269,13 @@ export type Database = {
           catalog_pdf_url?: string | null
           category_id?: string | null
           created_at?: string
+          deal_ends_at?: string | null
           description_ar?: string
           description_en?: string
           discount_price?: number | null
           id?: string
           image_url?: string | null
+          images?: string[]
           is_featured?: boolean
           name_ar: string
           name_en?: string
@@ -283,11 +287,13 @@ export type Database = {
           catalog_pdf_url?: string | null
           category_id?: string | null
           created_at?: string
+          deal_ends_at?: string | null
           description_ar?: string
           description_en?: string
           discount_price?: number | null
           id?: string
           image_url?: string | null
+          images?: string[]
           is_featured?: boolean
           name_ar?: string
           name_en?: string
@@ -325,6 +331,79 @@ export type Database = {
           phone?: string
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          author_name: string
+          comment: string
+          created_at: string
+          id: string
+          is_approved: boolean
+          product_id: string
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          author_name?: string
+          comment?: string
+          created_at?: string
+          id?: string
+          is_approved?: boolean
+          product_id: string
+          rating?: number
+          user_id: string
+        }
+        Update: {
+          author_name?: string
+          comment?: string
+          created_at?: string
+          id?: string
+          is_approved?: boolean
+          product_id?: string
+          rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_alerts: {
+        Row: {
+          created_at: string
+          id: string
+          is_notified: boolean
+          phone: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_notified?: boolean
+          phone: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_notified?: boolean
+          phone?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       store_settings: {
         Row: {
@@ -370,6 +449,17 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      track_order: {
+        Args: { _order_number: number; _phone: string }
+        Returns: {
+          created_at: string
+          governorate_name: string
+          items: Json
+          order_number: number
+          status: string
+          total_amount: number
+        }[]
       }
     }
     Enums: {
