@@ -101,7 +101,18 @@ export const placeOrder = createServerFn({ method: "POST" })
       }
     }
 
+    // First-time customer: automatic 5% off, once, on their very first order.
+    const { count: previousOrders } = await supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", userId);
+    if (!previousOrders) {
+      discount += Math.round((subtotal * 5) / 100);
+    }
+    discount = Math.max(0, Math.min(subtotal, discount));
+
     const total = Math.max(0, subtotal - discount) + shipping;
+
 
     const { data: order, error: orderErr } = await supabase
       .from("orders")
