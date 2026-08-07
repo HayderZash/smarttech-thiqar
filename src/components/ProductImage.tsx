@@ -40,16 +40,30 @@ export function ProductImage({
   crop,
   className,
   loading,
+  watermark = true,
 }: {
   src: string;
   alt: string;
   crop?: CropSettings;
   className?: string;
   loading?: "lazy" | "eager";
+  watermark?: boolean;
 }) {
   const settings = useCropSettings();
   const c = crop ?? settings;
   return (
-    <img src={src} alt={alt} loading={loading} className={cn(className)} style={cropStyle(c)} />
+    <>
+      <img src={src} alt={alt} loading={loading} className={cn(className)} style={cropStyle(c)} />
+      {watermark && (
+        <img
+          src={storeLogo.url}
+          alt=""
+          aria-hidden
+          loading="lazy"
+          className="pointer-events-none absolute bottom-1.5 end-1.5 z-10 w-[26%] max-w-[72px] select-none opacity-70 drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]"
+        />
+      )}
+    </>
   );
 }
+
