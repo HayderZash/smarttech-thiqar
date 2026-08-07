@@ -20,6 +20,9 @@ type Product = {
   description_en: string;
   price: number;
   discount_price: number | null;
+  base_price?: number;
+  base_discount_price?: number | null;
+
   stock_qty: number;
   is_featured: boolean;
   image_url: string | null;
