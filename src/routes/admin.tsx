@@ -23,6 +23,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { NumberField } from "@/components/NumberField";
+import { PricingTiersEditor } from "@/components/PricingTiersEditor";
 import { BulkDeleteProducts } from "@/components/BulkDeleteProducts";
 import { CategoriesExcel } from "@/components/CategoriesExcel";
 import { ProductsExcel } from "@/components/ProductsExcel";
