@@ -36,7 +36,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { ORDER_STATUSES, formatIQD, statusLabel, whatsappLink } from "@/lib/format";
+import { ORDER_STATUSES, formatIQD, statusLabel, toLatinDigits, whatsappLink } from "@/lib/format";
 import { localized, useLang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { bannersQuery, categoriesQuery, governoratesQuery, productsQuery, settingsQuery } from "@/lib/queries";
@@ -726,12 +726,12 @@ function AdminPage() {
                   </p>
                 </div>
                 <Input
-                  type="number"
+                  type="text" inputMode="numeric" dir="ltr"
                   defaultValue={p.stock_qty}
                   className="w-20"
                   aria-label="stock"
                   onBlur={async (e) => {
-                    const v = Number(e.target.value);
+                    const v = Number(toLatinDigits(e.target.value));
                     if (v === p.stock_qty) return;
                     const { error } = await supabase
                       .from("products")
@@ -855,12 +855,12 @@ function AdminPage() {
             <div key={g.id} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
               <span className="flex-1 text-sm font-medium">{g.name_ar}</span>
               <Input
-                type="number"
+                type="text" inputMode="numeric" dir="ltr"
                 defaultValue={Number(g.shipping_cost)}
                 className="w-32"
                 aria-label="shipping"
                 onBlur={async (e) => {
-                  const v = Number(e.target.value);
+                  const v = Number(toLatinDigits(e.target.value));
                   if (v === Number(g.shipping_cost)) return;
                   const { error } = await supabase
                     .from("governorates")
