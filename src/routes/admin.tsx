@@ -47,7 +47,7 @@ import { CropSettingsPanel } from "@/components/CropSettingsPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { CATEGORY_ICON_KEYS, CategoryIcon } from "@/lib/category-icons";
 import { useAuth } from "@/lib/auth";
-import { ORDER_STATUSES, formatIQD, statusLabel, toLatinDigits, whatsappLink } from "@/lib/format";
+import { ORDER_STATUSES, formatIQD, statusGroupLabel, statusLabel, toLatinDigits, whatsappLink } from "@/lib/format";
 import { localized, useLang } from "@/lib/i18n";
 import { setItemUnavailable } from "@/lib/orders.functions";
 import { cn } from "@/lib/utils";
@@ -678,6 +678,36 @@ function AdminPage() {
 
         {/* ORDERS */}
         <TabsContent value="orders" className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: "all", label: "كل الطلبات" },
+              ...[...ORDER_STATUSES, "cancelled"].map((s) => ({
+                key: s,
+                label: statusGroupLabel(s, lang),
+              })),
+            ].map((tab) => {
+              const count =
+                tab.key === "all"
+                  ? allOrders.filter(matchOrder).length
+                  : allOrders.filter((o) => matchOrder(o) && o["status"] === tab.key).length;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setStatusFilter(tab.key)}
+                  className={cn(
+                    "rounded-full border px-3 py-1.5 text-xs font-semibold transition",
+                    statusFilter === tab.key
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "bg-card text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  {tab.label} ({count})
+                </button>
+              );
+            })}
+          </div>
+
           {visibleOrders.length === 0 && (
             <p className="py-10 text-center text-sm text-muted-foreground">لا توجد طلبات</p>
           )}
