@@ -402,8 +402,12 @@ function AdminPage() {
       name_en: p.name_en ?? "",
       description_ar: p.description_ar ?? "",
       description_en: p.description_en ?? "",
-      price: Number(p.price) || 0,
-      discount_price: p.discount_price === null ? null : Number(p.discount_price),
+      price: Number(p.base_price ?? p.price) || 0,
+      discount_price:
+        (p.base_discount_price ?? p.discount_price) === null
+          ? null
+          : Number(p.base_discount_price ?? p.discount_price),
+
       category_id: p.category_id ?? null,
       image_url: p.image_url ?? "",
       catalog_pdf_url: p.catalog_pdf_url ?? "",
