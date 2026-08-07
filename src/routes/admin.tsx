@@ -23,6 +23,7 @@ import { toast } from "sonner";
 
 import { NumberField } from "@/components/NumberField";
 import { BulkDeleteProducts } from "@/components/BulkDeleteProducts";
+import { CategoriesExcel } from "@/components/CategoriesExcel";
 import { ProductsExcel } from "@/components/ProductsExcel";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -1005,6 +1006,11 @@ function AdminPage() {
 
         {/* CATEGORIES */}
         <TabsContent value="categories" className="space-y-4">
+          <CategoriesExcel
+            categories={(categories.data ?? []) as never}
+            onDone={() => invalidate(["categories"])}
+          />
+
           <Panel id="cat-new" title="إضافة قسم" desc="أنشئ قسماً رئيسياً أو فرعياً">
           <div className="grid gap-4 sm:grid-cols-2">
 
