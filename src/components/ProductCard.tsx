@@ -37,7 +37,13 @@ export function StockBadge({ qty, className }: { qty: number; className?: string
   );
 }
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({
+  product,
+  categoryPath,
+}: {
+  product: Product;
+  categoryPath?: string | undefined;
+}) {
   const { lang, t } = useLang();
   const { add } = useCart();
   const wishlist = useWishlist();
