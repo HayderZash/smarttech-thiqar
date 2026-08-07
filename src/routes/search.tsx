@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { Pagination } from "@/components/Pagination";
 import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard";
 import {
   Breadcrumb,
@@ -23,7 +24,10 @@ import {
 } from "@/components/ui/select";
 import { effectivePrice, formatIQD } from "@/lib/format";
 import { localized, useLang } from "@/lib/i18n";
+import { CategoryIcon } from "@/lib/category-icons";
 import { categoriesQuery, productsQuery } from "@/lib/queries";
+
+const PER_PAGE = 30;
 
 type Search = { q?: string | undefined; cat?: string | undefined };
 type SortKey = "newest" | "name_asc" | "name_desc" | "price_asc" | "price_desc";
@@ -54,6 +58,7 @@ function SearchPage() {
   const categories = useQuery(categoriesQuery);
 
   const [sort, setSort] = useState<SortKey>("newest");
+  const [page, setPage] = useState(1);
   const maxPrice = useMemo(
     () => Math.max(100000, ...(products.data ?? []).map((p) => effectivePrice(p))),
     [products.data],
@@ -61,6 +66,10 @@ function SearchPage() {
   const [range, setRange] = useState<number[]>([0, maxPrice]);
   const hi = range[1] ?? maxPrice;
   const lo = range[0] ?? 0;
+
+  useEffect(() => {
+    setPage(1);
+  }, [q, cat, sort, lo, hi]);
 
   const allCats = categories.data ?? [];
   const category = cat ?? "all";
@@ -105,6 +114,10 @@ function SearchPage() {
           return 0;
       }
     });
+
+  const totalPages = Math.max(1, Math.ceil(results.length / PER_PAGE));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = results.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
 
   return (
     <div>
@@ -163,8 +176,16 @@ function SearchPage() {
               key={s.id}
               to="/search"
               search={{ cat: s.id }}
-              className="rounded-full bg-sand px-3 py-1 text-xs font-medium hover:bg-primary-soft"
+              className="flex items-center gap-1.5 rounded-full bg-sand px-3 py-1 text-xs font-medium hover:bg-primary-soft"
             >
+              <span className="flex size-5 items-center justify-center overflow-hidden rounded-full bg-card">
+                <CategoryIcon
+                  icon={s.icon}
+                  imageUrl={s.image_url}
+                  fallback={localized(lang, s.name_ar, s.name_en).charAt(0)}
+                  className="!text-[10px]"
+                />
+              </span>
               {localized(lang, s.name_ar, s.name_en)}
             </Link>
           ))}
@@ -238,11 +259,17 @@ function SearchPage() {
       ) : results.length === 0 ? (
         <p className="py-16 text-center text-sm text-muted-foreground">{t("noProducts")}</p>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {results.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
+        <>
+          <p className="mb-3 text-xs text-muted-foreground">
+            {t("products")}: {results.length}
+          </p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {pageItems.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+          <Pagination page={safePage} totalPages={totalPages} onPage={setPage} />
+        </>
       )}
     </div>
   );

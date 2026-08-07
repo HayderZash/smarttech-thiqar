@@ -2,8 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 
+import { CategoryIcon } from "@/lib/category-icons";
 import { localized, useLang } from "@/lib/i18n";
-import { categoriesQuery, productsQuery } from "@/lib/queries";
+import { categoriesQuery, productsQuery, settingsQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/categories")({
   head: () => ({
@@ -26,6 +27,7 @@ function CategoriesPage() {
   const { lang, t } = useLang();
   const categories = useQuery(categoriesQuery);
   const products = useQuery(productsQuery);
+  const settings = useQuery(settingsQuery);
 
   const all = categories.data ?? [];
   const roots = all.filter((c) => !c.parent_id);
@@ -57,13 +59,11 @@ function CategoriesPage() {
                 className="flex items-center gap-3 p-4 hover:bg-sand"
               >
                 <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-sand">
-                  {root.image_url ? (
-                    <img src={root.image_url} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="text-lg font-bold text-primary">
-                      {localized(lang, root.name_ar, root.name_en).charAt(0)}
-                    </span>
-                  )}
+                  <CategoryIcon
+                    icon={root.icon}
+                    imageUrl={root.image_url}
+                    fallback={localized(lang, root.name_ar, root.name_en).charAt(0)}
+                  />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-base font-semibold">
@@ -83,8 +83,16 @@ function CategoriesPage() {
                       key={k.id}
                       to="/search"
                       search={{ cat: k.id }}
-                      className="rounded-full bg-sand px-3 py-1.5 text-xs font-medium hover:bg-primary-soft"
+                      className="flex items-center gap-1.5 rounded-full bg-sand px-3 py-1.5 text-xs font-medium hover:bg-primary-soft"
                     >
+                      <span className="flex size-6 items-center justify-center overflow-hidden rounded-full bg-card">
+                        <CategoryIcon
+                          icon={k.icon}
+                          imageUrl={k.image_url}
+                          fallback={localized(lang, k.name_ar, k.name_en).charAt(0)}
+                          className="!text-[10px]"
+                        />
+                      </span>
                       {localized(lang, k.name_ar, k.name_en)}
                     </Link>
                   ))}
@@ -96,8 +104,12 @@ function CategoriesPage() {
 
         <section className="overflow-hidden rounded-2xl border bg-card">
           <Link to="/search" search={{ cat: "none" }} className="flex items-center gap-3 p-4 hover:bg-sand">
-            <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-sand text-lg font-bold text-primary">
-              {lang === "ar" ? "ع" : "G"}
+            <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-sand">
+              <CategoryIcon
+                icon={settings.data?.["general_icon"] ?? "boxes"}
+                imageUrl={settings.data?.["general_image_url"] ?? null}
+                fallback={lang === "ar" ? "ع" : "G"}
+              />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-base font-semibold">

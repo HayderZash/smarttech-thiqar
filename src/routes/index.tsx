@@ -2,8 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 
+import { NewsCarousel } from "@/components/NewsCarousel";
 import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard";
 import { discountPercent } from "@/lib/format";
+import { CategoryIcon } from "@/lib/category-icons";
 import { localized, useLang } from "@/lib/i18n";
 import { bannersQuery, categoriesQuery, productsQuery } from "@/lib/queries";
 
@@ -78,21 +80,7 @@ function Home() {
       <h1 className="sr-only">SmartTech — إلكترونيات وكهربائيات وطاقة شمسية</h1>
 
       {banners.data && banners.data.length > 0 && (
-        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1">
-          {banners.data.map((b) => (
-            <a
-              key={b.id}
-              href={b.link_url ?? "#"}
-              className="relative aspect-[16/7] w-[85%] shrink-0 snap-center overflow-hidden rounded-2xl bg-sand sm:w-[60%] lg:w-[48%]"
-            >
-              <img
-                src={b.image_url}
-                alt={localized(lang, b.title_ar, b.title_en)}
-                className="h-full w-full object-cover"
-              />
-            </a>
-          ))}
-        </div>
+        <NewsCarousel items={banners.data as never} />
       )}
 
       {roots.length > 0 && (
@@ -106,13 +94,11 @@ function Home() {
                 className="flex w-24 shrink-0 flex-col items-center gap-2"
               >
                 <span className="flex size-20 items-center justify-center overflow-hidden rounded-2xl border bg-sand">
-                  {c.image_url ? (
-                    <img src={c.image_url} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="text-xl font-bold text-primary">
-                      {localized(lang, c.name_ar, c.name_en).charAt(0)}
-                    </span>
-                  )}
+                  <CategoryIcon
+                    icon={c.icon}
+                    imageUrl={c.image_url}
+                    fallback={localized(lang, c.name_ar, c.name_en).charAt(0)}
+                  />
                 </span>
                 <span className="line-clamp-2 text-center text-xs font-medium">
                   {localized(lang, c.name_ar, c.name_en)}
@@ -122,6 +108,7 @@ function Home() {
           </div>
         </Section>
       )}
+
 
       {products.isLoading && (
         <Section title={t("latest")}>

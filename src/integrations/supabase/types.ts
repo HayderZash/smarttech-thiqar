@@ -17,6 +17,8 @@ export type Database = {
       banners: {
         Row: {
           created_at: string
+          description_ar: string
+          description_en: string
           id: string
           image_url: string
           is_active: boolean
@@ -27,6 +29,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          description_ar?: string
+          description_en?: string
           id?: string
           image_url: string
           is_active?: boolean
@@ -37,6 +41,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          description_ar?: string
+          description_en?: string
           id?: string
           image_url?: string
           is_active?: boolean
@@ -50,6 +56,7 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
+          icon: string
           id: string
           image_url: string | null
           name_ar: string
@@ -59,6 +66,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          icon?: string
           id?: string
           image_url?: string | null
           name_ar: string
@@ -68,6 +76,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          icon?: string
           id?: string
           image_url?: string | null
           name_ar?: string

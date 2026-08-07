@@ -37,7 +37,9 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Pagination } from "@/components/Pagination";
 import { supabase } from "@/integrations/supabase/client";
+import { CATEGORY_ICON_KEYS, CategoryIcon } from "@/lib/category-icons";
 import { useAuth } from "@/lib/auth";
 import { ORDER_STATUSES, formatIQD, statusLabel, toLatinDigits, whatsappLink } from "@/lib/format";
 import { localized, useLang } from "@/lib/i18n";
@@ -186,6 +188,42 @@ function Panel({
 }
 
 
+function IconPicker({
+  value,
+  onChange,
+  label = "الأيقونة",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  label?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Select value={value || "none"} onValueChange={(v) => onChange(v === "none" ? "" : v)}>
+        <SelectTrigger>
+          <SelectValue placeholder="بدون أيقونة" />
+        </SelectTrigger>
+        <SelectContent className="max-h-72">
+          <SelectItem value="none">بدون أيقونة</SelectItem>
+          {CATEGORY_ICON_KEYS.map((k) => (
+            <SelectItem key={k} value={k}>
+              <span className="flex items-center gap-2">
+                <span className="flex size-5 items-center justify-center">
+                  <CategoryIcon icon={k} />
+                </span>
+                {k}
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+const ADMIN_PER_PAGE = 100;
+
 const emptyProduct = {
   sku: "",
   name_ar: "",
@@ -251,8 +289,22 @@ function AdminPage() {
     keys.forEach((k) => void qc.invalidateQueries({ queryKey: [k] }));
 
   const [pform, setPform] = useState({ ...emptyProduct });
-  const [cform, setCform] = useState({ name_ar: "", name_en: "", image_url: "", parent_id: "" });
-  const [bform, setBform] = useState({ image_url: "", title_ar: "", title_en: "", link_url: "" });
+  const [cform, setCform] = useState({
+    name_ar: "",
+    name_en: "",
+    image_url: "",
+    icon: "",
+    parent_id: "",
+  });
+  const [bform, setBform] = useState({
+    image_url: "",
+    title_ar: "",
+    title_en: "",
+    description_ar: "",
+    description_en: "",
+    link_url: "",
+  });
+  const [prodPage, setProdPage] = useState(1);
   const [couponForm, setCouponForm] = useState({ code: "", discount_type: "fixed", discount_value: 0 });
   const [solarForm, setSolarForm] = useState({ ...emptySolar });
   const [store, setStore] = useState<Record<string, string>>({});
@@ -265,6 +317,10 @@ function AdminPage() {
     const stored = localStorage.getItem("admin_tab");
     if (stored) setTab(stored);
   }, []);
+
+  useEffect(() => {
+    setProdPage(1);
+  }, [q, scope]);
 
   const saveProduct = useMutation({
     mutationFn: async () => {
@@ -792,9 +848,15 @@ function AdminPage() {
             onDone={() => invalidate(["products"])}
           />
 
-          <Panel id="product-list" title={`قائمة المنتجات (${visibleProducts.length})`} desc="يُعرض أول 300 منتج — استخدم البحث للوصول لبقية المنتجات">
+          <Panel
+            id="product-list"
+            title={`قائمة المنتجات (${visibleProducts.length})`}
+            desc="100 منتج في كل صفحة — البحث يشمل كل المنتجات"
+          >
           <div className="space-y-3">
-            {visibleProducts.slice(0, 300).map((p) => (
+            {visibleProducts
+              .slice((Math.min(prodPage, Math.max(1, Math.ceil(visibleProducts.length / ADMIN_PER_PAGE))) - 1) * ADMIN_PER_PAGE, Math.min(prodPage, Math.max(1, Math.ceil(visibleProducts.length / ADMIN_PER_PAGE))) * ADMIN_PER_PAGE)
+              .map((p) => (
 
               <div key={p.id} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
                 <div className="size-12 shrink-0 overflow-hidden rounded-xl bg-sand">
@@ -838,6 +900,11 @@ function AdminPage() {
               </div>
             ))}
           </div>
+          <Pagination
+            page={Math.min(prodPage, Math.max(1, Math.ceil(visibleProducts.length / ADMIN_PER_PAGE)))}
+            totalPages={Math.max(1, Math.ceil(visibleProducts.length / ADMIN_PER_PAGE))}
+            onPage={setProdPage}
+          />
           </Panel>
         </TabsContent>
 
@@ -872,11 +939,16 @@ function AdminPage() {
               </Select>
             </div>
             <FileField
-              label="صورة القسم"
+              label="صورة القسم (اختياري)"
               accept="image/*"
               folder="categories"
               value={cform.image_url}
               onChange={(url) => setCform({ ...cform, image_url: url })}
+            />
+            <IconPicker
+              value={cform.icon}
+              onChange={(v) => setCform({ ...cform, icon: v })}
+              label="أيقونة القسم (تظهر إذا لم توجد صورة)"
             />
             <Button
               className="sm:col-span-2"
@@ -886,11 +958,12 @@ function AdminPage() {
                   name_ar: cform.name_ar,
                   name_en: cform.name_en,
                   image_url: cform.image_url || null,
+                  icon: cform.icon,
                   parent_id: cform.parent_id || null,
                 });
                 if (error) toast.error(error.message);
                 else {
-                  setCform({ name_ar: "", name_en: "", image_url: "", parent_id: "" });
+                  setCform({ name_ar: "", name_en: "", image_url: "", icon: "", parent_id: "" });
                   invalidate(["categories"]);
                   toast.success("تمت الإضافة");
                 }
@@ -900,15 +973,88 @@ function AdminPage() {
             </Button>
           </div>
           </Panel>
+          <Panel id="cat-general" title="القسم العام" desc="صورة وأيقونة قسم «العام» الذي يجمع المنتجات بلا قسم">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FileField
+                label="صورة القسم العام"
+                accept="image/*"
+                folder="categories"
+                value={store["general_image_url"] ?? settings.data?.["general_image_url"] ?? ""}
+                onChange={(url) => setStore({ ...store, general_image_url: url })}
+              />
+              <IconPicker
+                label="أيقونة القسم العام"
+                value={store["general_icon"] ?? settings.data?.["general_icon"] ?? ""}
+                onChange={(v) => setStore({ ...store, general_icon: v })}
+              />
+              <Button
+                className="sm:col-span-2"
+                onClick={async () => {
+                  const rows = [
+                    {
+                      key: "general_image_url",
+                      value: store["general_image_url"] ?? settings.data?.["general_image_url"] ?? "",
+                    },
+                    {
+                      key: "general_icon",
+                      value: store["general_icon"] ?? settings.data?.["general_icon"] ?? "",
+                    },
+                  ];
+                  const { error } = await supabase.from("store_settings").upsert(rows);
+                  if (error) toast.error(error.message);
+                  else {
+                    invalidate(["store_settings"]);
+                    toast.success("تم الحفظ");
+                  }
+                }}
+              >
+                حفظ القسم العام
+              </Button>
+            </div>
+          </Panel>
+
           <Panel id="cat-list" title="قائمة الأقسام" desc="حذف الأقسام غير المستخدمة">
           <div className="space-y-3">
             {(categories.data ?? []).map((c) => (
 
-              <div key={c.id} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
-                <span className="flex-1 text-sm font-medium">
+              <div key={c.id} className="flex flex-wrap items-center gap-3 rounded-2xl border bg-card p-3">
+                <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-sand">
+                  <CategoryIcon icon={c.icon} imageUrl={c.image_url} fallback={c.name_ar.charAt(0)} />
+                </span>
+                <span className="min-w-[8rem] flex-1 text-sm font-medium">
                   {c.parent_id ? "— " : ""}
                   {c.name_ar}
                 </span>
+                <div className="w-44">
+                  <IconPicker
+                    label="الأيقونة"
+                    value={c.icon ?? ""}
+                    onChange={async (v) => {
+                      const { error } = await supabase
+                        .from("categories")
+                        .update({ icon: v })
+                        .eq("id", c.id);
+                      if (error) toast.error(error.message);
+                      else invalidate(["categories"]);
+                    }}
+                  />
+                </div>
+                <div className="w-60">
+                  <FileField
+                    label="الصورة"
+                    accept="image/*"
+                    folder="categories"
+                    value={c.image_url ?? ""}
+                    onChange={async (url) => {
+                      const { error } = await supabase
+                        .from("categories")
+                        .update({ image_url: url || null })
+                        .eq("id", c.id);
+                      if (error) toast.error(error.message);
+                      else invalidate(["categories"]);
+                    }}
+                  />
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -962,7 +1108,7 @@ function AdminPage() {
 
         {/* BANNERS */}
         <TabsContent value="banners" className="space-y-4">
-          <Panel id="banner-new" title="إضافة بانر" desc="صور تظهر في أعلى الصفحة الرئيسية">
+          <Panel id="banner-new" title="إضافة خبر / بانر" desc="يظهر في شريط الأخبار المتحرك أعلى الصفحة الرئيسية">
           <div className="grid gap-4 sm:grid-cols-2">
 
             <FileField
@@ -977,7 +1123,28 @@ function AdminPage() {
               <Input value={bform.title_ar} onChange={(e) => setBform({ ...bform, title_ar: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>الرابط</Label>
+              <Label>العنوان بالإنكليزية</Label>
+              <Input dir="ltr" value={bform.title_en} onChange={(e) => setBform({ ...bform, title_en: e.target.value })} />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>الوصف بالعربية</Label>
+              <Textarea
+                rows={2}
+                value={bform.description_ar}
+                onChange={(e) => setBform({ ...bform, description_ar: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>الوصف بالإنكليزية</Label>
+              <Textarea
+                rows={2}
+                dir="ltr"
+                value={bform.description_en}
+                onChange={(e) => setBform({ ...bform, description_en: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>الرابط عند النقر (مثال: /product/ID أو رابط خارجي)</Label>
               <Input dir="ltr" value={bform.link_url} onChange={(e) => setBform({ ...bform, link_url: e.target.value })} />
             </div>
             <Button
@@ -988,11 +1155,20 @@ function AdminPage() {
                   image_url: bform.image_url,
                   title_ar: bform.title_ar,
                   title_en: bform.title_en,
+                  description_ar: bform.description_ar,
+                  description_en: bform.description_en,
                   link_url: bform.link_url || null,
                 });
                 if (error) toast.error(error.message);
                 else {
-                  setBform({ image_url: "", title_ar: "", title_en: "", link_url: "" });
+                  setBform({
+                    image_url: "",
+                    title_ar: "",
+                    title_en: "",
+                    description_ar: "",
+                    description_en: "",
+                    link_url: "",
+                  });
                   invalidate(["banners"]);
                   toast.success("تمت الإضافة");
                 }
@@ -1007,6 +1183,10 @@ function AdminPage() {
             {(banners.data ?? []).map((b) => (
               <div key={b.id} className="relative overflow-hidden rounded-2xl border">
                 <img src={b.image_url} alt="" className="aspect-[16/7] w-full object-cover" />
+                <div className="p-3">
+                  <p className="text-sm font-semibold">{b.title_ar || "—"}</p>
+                  <p className="line-clamp-2 text-xs text-muted-foreground">{b.description_ar}</p>
+                </div>
                 <Button
                   variant="destructive"
                   size="icon"
