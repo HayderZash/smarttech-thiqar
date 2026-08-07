@@ -61,16 +61,16 @@ function SolarPage() {
             </label>
             <label className="space-y-1">
               <span className="text-[11px] text-muted-foreground">{t("watt")}</span>
-              <NumberField value={d.watt} onValueChange={(v) => update(d.id, { watt: v })} />
+              <NumberField value={d.watt} onValueChange={(v) => update(d.id, { watt: v ?? 0 })} />
             </label>
             <label className="space-y-1">
               <span className="text-[11px] text-muted-foreground">{t("qtyLabel")}</span>
-              <NumberField value={d.qty} onValueChange={(v) => update(d.id, { qty: v })} />
+              <NumberField value={d.qty} onValueChange={(v) => update(d.id, { qty: v ?? 0 })} />
             </label>
             <div className="flex items-end gap-2">
               <label className="flex-1 space-y-1">
                 <span className="text-[11px] text-muted-foreground">{t("hoursPerDay")}</span>
-                <NumberField value={d.hours} onValueChange={(v) => update(d.id, { hours: v })} />
+                <NumberField value={d.hours} onValueChange={(v) => update(d.id, { hours: v ?? 0 })} />
               </label>
               <Button
                 variant="ghost"
