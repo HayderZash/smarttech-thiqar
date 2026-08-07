@@ -55,6 +55,12 @@ const PAGE = 1000;
 export const productsQuery = queryOptions({
   queryKey: ["products"],
   queryFn: async (): Promise<Product[]> => {
+    const { data: settingRows } = await supabase
+      .from("store_settings")
+      .select("key, value")
+      .eq("key", "price_markup_percent");
+    const markup = Number(settingRows?.[0]?.value ?? 0) || 0;
+
     // PostgREST caps a single response at 1000 rows — page through everything.
     const all: Product[] = [];
     for (let from = 0; ; from += PAGE) {
@@ -66,12 +72,22 @@ export const productsQuery = queryOptions({
         .range(from, from + PAGE - 1);
       if (error) throw error;
       const rows = (data ?? []) as Product[];
-      all.push(...rows);
+      all.push(
+        ...rows.map((p) => ({
+          ...p,
+          base_price: Number(p.price) || 0,
+          base_discount_price: p.discount_price === null ? null : Number(p.discount_price),
+          price: applyMarkup(Number(p.price) || 0, markup),
+          discount_price:
+            p.discount_price === null ? null : applyMarkup(Number(p.discount_price), markup),
+        })),
+      );
       if (rows.length < PAGE) break;
     }
     return all;
   },
 });
+
 
 
 export const categoriesQuery = queryOptions({
