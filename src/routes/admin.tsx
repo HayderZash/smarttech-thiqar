@@ -792,7 +792,7 @@ function AdminPage() {
             onDone={() => invalidate(["products"])}
           />
 
-          <Panel id="product-list" title={`قائمة المنتجات (${visibleProducts.length})`} desc="تعديل المخزون أو الحذف">
+          <Panel id="product-list" title={`قائمة المنتجات (${visibleProducts.length})`} desc="يُعرض أول 300 منتج — استخدم البحث للوصول لبقية المنتجات">
           <div className="space-y-3">
             {visibleProducts.slice(0, 300).map((p) => (
 
