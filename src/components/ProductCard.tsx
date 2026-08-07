@@ -92,6 +92,9 @@ export function ProductCard({
           <h3 className="line-clamp-2 text-sm font-semibold leading-snug">
             {localized(lang, product.name_ar, product.name_en)}
           </h3>
+          {categoryPath && (
+            <span className="line-clamp-1 text-[11px] text-muted-foreground">{categoryPath}</span>
+          )}
           <div className="mt-auto flex flex-wrap items-baseline gap-2">
             <span className="text-base font-bold text-primary">{formatIQD(price, lang)}</span>
             {off > 0 && (
