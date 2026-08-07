@@ -118,6 +118,10 @@ function AccountPage() {
       <div className="mx-auto max-w-md">
         <h1 className="text-xl font-bold">{t(mode === "signin" ? "signIn" : "register")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("authHint")}</p>
+        <p className="mt-3 rounded-xl border border-primary/25 bg-primary-soft p-3 text-sm font-medium text-accent-foreground">
+          🎁 {t("firstOrderNote")}
+        </p>
+
         <div className="mt-4 grid grid-cols-2 gap-1 rounded-full bg-muted p-1">
           {(["signin", "register"] as const).map((m) => (
             <button
