@@ -1771,6 +1771,8 @@ function AdminPage() {
               if (error) toast.error(error.message);
               else {
                 invalidate(["store_settings"]);
+                invalidate(["products"]);
+
                 toast.success("تم الحفظ");
               }
             }}
