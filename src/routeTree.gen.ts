@@ -14,6 +14,7 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as CategoriesRouteImport } from './routes/categories'
+import { Route as DealsRouteImport } from './routes/deals'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as WishlistRouteImport } from './routes/wishlist'
@@ -44,6 +45,11 @@ const CategoriesRoute = CategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DealsRoute = DealsRouteImport.update({
+  id: '/deals',
+  path: '/deals',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrdersRoute = OrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
+  '/deals': typeof DealsRoute
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
   '/wishlist': typeof WishlistRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
+  '/deals': typeof DealsRoute
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
   '/wishlist': typeof WishlistRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
+  '/deals': typeof DealsRoute
   '/orders': typeof OrdersRoute
   '/search': typeof SearchRoute
   '/wishlist': typeof WishlistRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/cart'
     | '/categories'
+    | '/deals'
     | '/orders'
     | '/search'
     | '/wishlist'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/cart'
     | '/categories'
+    | '/deals'
     | '/orders'
     | '/search'
     | '/wishlist'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/cart'
     | '/categories'
+    | '/deals'
     | '/orders'
     | '/search'
     | '/wishlist'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   CartRoute: typeof CartRoute
   CategoriesRoute: typeof CategoriesRoute
+  DealsRoute: typeof DealsRoute
   OrdersRoute: typeof OrdersRoute
   SearchRoute: typeof SearchRoute
   WishlistRoute: typeof WishlistRoute
@@ -184,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategoriesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/deals': {
+      id: '/deals'
+      path: '/deals'
+      fullPath: '/deals'
+      preLoaderRoute: typeof DealsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/orders': {
       id: '/orders'
       path: '/orders'
@@ -221,6 +241,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   CartRoute: CartRoute,
   CategoriesRoute: CategoriesRoute,
+  DealsRoute: DealsRoute,
   OrdersRoute: OrdersRoute,
   SearchRoute: SearchRoute,
   WishlistRoute: WishlistRoute,
