@@ -631,28 +631,24 @@ function AdminPage() {
             </div>
             <div className="space-y-2">
               <Label>السعر</Label>
-              <Input
-                type="number"
+              <NumberField
                 value={pform.price}
-                onChange={(e) => setPform({ ...pform, price: Number(e.target.value) })}
+                onValueChange={(v) => setPform({ ...pform, price: v ?? 0 })}
               />
             </div>
             <div className="space-y-2">
               <Label>سعر الخصم</Label>
-              <Input
-                type="number"
-                value={pform.discount_price ?? ""}
-                onChange={(e) =>
-                  setPform({ ...pform, discount_price: e.target.value ? Number(e.target.value) : null })
-                }
+              <NumberField
+                allowEmpty
+                value={pform.discount_price}
+                onValueChange={(v) => setPform({ ...pform, discount_price: v })}
               />
             </div>
             <div className="space-y-2">
               <Label>الكمية</Label>
-              <Input
-                type="number"
+              <NumberField
                 value={pform.stock_qty}
-                onChange={(e) => setPform({ ...pform, stock_qty: Number(e.target.value) })}
+                onValueChange={(v) => setPform({ ...pform, stock_qty: v ?? 0 })}
               />
             </div>
             <div className="flex items-center gap-3 pt-7">
