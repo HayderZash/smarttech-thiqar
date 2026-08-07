@@ -138,14 +138,20 @@ function SearchPage() {
             <BreadcrumbPage>
               {activeCat
                 ? localized(lang, activeCat.name_ar, activeCat.name_en)
-                : t("allCategories")}
+                : uncategorized
+                  ? generalLabel
+                  : t("allCategories")}
             </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
 
       <h1 className="mb-4 text-xl font-bold">
-        {activeCat ? localized(lang, activeCat.name_ar, activeCat.name_en) : t("searchTitle")}
+        {activeCat
+          ? localized(lang, activeCat.name_ar, activeCat.name_en)
+          : uncategorized
+            ? generalLabel
+            : t("searchTitle")}
         {term && <span className="text-muted-foreground"> — {q}</span>}
       </h1>
 
