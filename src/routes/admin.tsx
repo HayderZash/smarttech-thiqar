@@ -688,14 +688,38 @@ function AdminPage() {
                 {o["phone"]} · {o["governorate_name"]} · {o["landmark"]}
                 {o["preferred_delivery_time"] ? ` · ${o["preferred_delivery_time"]}` : ""}
               </p>
-              <ul className="text-sm">
+              <ul className="space-y-1 text-sm">
                 {(o["order_items"] ?? []).map((it: Record<string, any>) => (
-                  <li key={it["id"]}>
-                    • {it["product_name"]} × {it["quantity"]} —{" "}
-                    {formatIQD(Number(it["unit_price"]) * Number(it["quantity"]), lang)}
+                  <li key={it["id"]} className="flex flex-wrap items-center gap-2">
+                    <span className={it["is_unavailable"] ? "text-muted-foreground line-through" : ""}>
+                      • {it["product_name"]} × {it["quantity"]} —{" "}
+                      {formatIQD(Number(it["unit_price"]) * Number(it["quantity"]), lang)}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant={it["is_unavailable"] ? "secondary" : "outline"}
+                      className="h-7 rounded-full text-xs"
+                      onClick={async () => {
+                        try {
+                          await markUnavailable({
+                            data: {
+                              order_item_id: String(it["id"]),
+                              is_unavailable: !it["is_unavailable"],
+                            },
+                          });
+                          invalidate(["admin-orders", "orders"]);
+                          toast.success("تم التحديث وإشعار الزبون");
+                        } catch {
+                          toast.error("تعذر التحديث");
+                        }
+                      }}
+                    >
+                      {it["is_unavailable"] ? "إرجاع كمتوفر" : "غير متوفر"}
+                    </Button>
                   </li>
                 ))}
               </ul>
+
               <p className="font-bold text-primary">
                 {formatIQD(Number(o["total_amount"]), lang)}{" "}
                 <span className="text-xs font-normal text-muted-foreground">
