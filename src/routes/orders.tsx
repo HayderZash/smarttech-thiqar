@@ -1,12 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Check, XCircle } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { ORDER_STATUSES, formatIQD, statusLabel } from "@/lib/format";
 import { useLang } from "@/lib/i18n";
+import { cancelOrder } from "@/lib/orders.functions";
 import { myOrdersQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/orders")({
   head: () => ({
@@ -72,6 +78,25 @@ function OrdersPage() {
   const { lang, t } = useLang();
   const { user, loading } = useAuth();
   const { data, isLoading } = useQuery(myOrdersQuery(user?.id));
+  const queryClient = useQueryClient();
+  const cancel = useServerFn(cancelOrder);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const onCancel = async (id: string): Promise<void> => {
+    if (!window.confirm(t("cancelOrderConfirm"))) return;
+    setBusyId(id);
+    try {
+      await cancel({ data: { order_id: id } });
+      await queryClient.invalidateQueries({ queryKey: ["orders"] });
+      toast.success(t("orderCancelled"));
+    } catch (err) {
+      const msg = err instanceof Error && err.message.includes("CANNOT_CANCEL") ? t("cannotCancel") : t("error");
+      toast.error(msg);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
 
   if (!loading && !user) {
     return (
@@ -151,6 +176,19 @@ function OrdersPage() {
               {o["notes"]}
             </p>
           )}
+
+          {o["status"] === "review" && (
+            <Button
+              variant="outline"
+              className="w-full rounded-full border-destructive/40 text-destructive hover:bg-destructive/10"
+              disabled={busyId === o["id"]}
+              onClick={() => void onCancel(String(o["id"]))}
+            >
+              <XCircle className="size-4" />
+              {t("cancelOrder")}
+            </Button>
+          )}
+
         </article>
       ))}
     </div>

@@ -101,7 +101,18 @@ export const placeOrder = createServerFn({ method: "POST" })
       }
     }
 
+    // First-time customer: automatic 5% off, once, on their very first order.
+    const { count: previousOrders } = await supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", userId);
+    if (!previousOrders) {
+      discount += Math.round((subtotal * 5) / 100);
+    }
+    discount = Math.max(0, Math.min(subtotal, discount));
+
     const total = Math.max(0, subtotal - discount) + shipping;
+
 
     const { data: order, error: orderErr } = await supabase
       .from("orders")
@@ -259,3 +270,30 @@ async function notifyTelegram(
     console.error("Telegram notify error", err);
   }
 }
+
+const cancelSchema = z.object({ order_id: z.string().uuid() });
+
+/** Customers may cancel their own order only while it is still under review. */
+export const cancelOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => cancelSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: order, error } = await supabase
+      .from("orders")
+      .select("id, status, customer_id")
+      .eq("id", data.order_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!order || order.customer_id !== userId) throw new Error("Order not found");
+    if (order.status !== "review") throw new Error("CANNOT_CANCEL");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: updErr } = await supabaseAdmin
+      .from("orders")
+      .update({ status: "cancelled" })
+      .eq("id", order.id)
+      .eq("status", "review");
+    if (updErr) throw new Error(updErr.message);
+    return { ok: true as const };
+  });

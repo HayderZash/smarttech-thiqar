@@ -21,7 +21,7 @@ import { useCart } from "@/lib/cart";
 import { formatIQD } from "@/lib/format";
 import { localized, useLang } from "@/lib/i18n";
 import { placeOrder, validateCoupon } from "@/lib/orders.functions";
-import { governoratesQuery } from "@/lib/queries";
+import { governoratesQuery, myOrdersQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -55,7 +55,10 @@ function CartPage() {
 
   const gov = (governorates ?? []).find((g) => g.id === govId);
   const shipping = Number(gov?.shipping_cost ?? 0);
-  const total = Math.max(0, subtotal - discount) + shipping;
+  const { data: myOrders } = useQuery(myOrdersQuery(user?.id)) as { data: unknown[] | undefined };
+  const firstOrderDiscount = user && (myOrders?.length ?? 0) === 0 ? Math.round((subtotal * 5) / 100) : 0;
+  const total = Math.max(0, subtotal - discount - firstOrderDiscount) + shipping;
+
 
   useEffect(() => {
     if (profile) {
@@ -228,7 +231,11 @@ function CartPage() {
             maxLength={20}
             placeholder="07XXXXXXXXX"
           />
+          <p className="rounded-xl bg-sand p-2.5 text-xs leading-relaxed text-muted-foreground">
+            {t("whatsappNote")}
+          </p>
         </div>
+
 
         <div className="space-y-2">
           <Label>{t("governorate")}</Label>
@@ -284,6 +291,13 @@ function CartPage() {
               <dd>-{formatIQD(discount, lang)}</dd>
             </div>
           )}
+          {firstOrderDiscount > 0 && (
+            <div className="flex justify-between text-destructive">
+              <dt>{t("firstOrderDiscount")}</dt>
+              <dd>-{formatIQD(firstOrderDiscount, lang)}</dd>
+            </div>
+          )}
+
           <div className="flex justify-between">
             <dt className="text-muted-foreground">{t("shipping")}</dt>
             <dd className="font-medium">{formatIQD(shipping, lang)}</dd>
