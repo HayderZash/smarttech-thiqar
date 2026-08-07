@@ -199,6 +199,7 @@ const emptyProduct = {
   is_featured: false,
   images_text: "",
   deal_ends_at: "",
+};
 
 const emptySolar = {
   kind: "panel",
