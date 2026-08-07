@@ -111,6 +111,16 @@ function CartPage() {
       toast.error(t("landmark"));
       return;
     }
+    const trimmedName = fullName.trim();
+    if (trimmedName.length < 2) {
+      toast.error(t("nameRequired"));
+      return;
+    }
+    const cleanedPhone = phone.replace(/\D/g, "");
+    if (cleanedPhone.length < 10) {
+      toast.error(t("invalidPhone"));
+      return;
+    }
 
     setBusy(true);
     try {
@@ -121,8 +131,8 @@ function CartPage() {
           landmark: landmark.trim(),
           preferred_delivery_time: time.trim(),
           coupon_code: coupon.trim() || null,
-          full_name: profile?.full_name || "",
-          phone: profile?.phone || "",
+          full_name: trimmedName,
+          phone: cleanedPhone,
         },
       });
       clear();
