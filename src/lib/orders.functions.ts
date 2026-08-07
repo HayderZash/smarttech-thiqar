@@ -246,15 +246,12 @@ async function notifyTelegram(
       `💰 المبلغ الإجمالي مع التوصيل: ${payload.total.toLocaleString("en-US")} د.ع`,
     ].join("\n");
 
-    const res = await fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
+    const res = await fetch(`${GATEWAY}/sendMessage`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        "X-Connection-Api-Key": telegramKey,
-        "Content-Type": "application/json",
-      },
+      headers: tgHeaders(lovableKey, telegramKey),
       body: JSON.stringify({ chat_id: chatId, text }),
     });
+
     if (!res.ok) {
       console.error(`Telegram notify failed [${res.status}]: ${await res.text()}`);
     }
