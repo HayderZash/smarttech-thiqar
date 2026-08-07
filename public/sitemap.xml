@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- BASE_URL is empty until the project has a public URL. TODO: prefix locs with the final domain. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>/categories</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>/deals</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>/search</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>/solar</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>/track</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>/wishlist</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
+  <url><loc>/cart</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
+  <url><loc>/account</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
+</urlset>
