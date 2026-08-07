@@ -102,7 +102,7 @@ function SearchPage() {
             onValueChange={(v) =>
               navigate({
                 to: "/search",
-                search: (prev) => ({ ...prev, cat: v === "all" ? undefined : v }),
+                search: (prev: Search): Search => ({ ...prev, cat: v === "all" ? undefined : v }),
               })
             }
           >
