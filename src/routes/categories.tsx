@@ -59,7 +59,7 @@ function CategoriesPage() {
       <Accordion
         type="single"
         collapsible
-        defaultValue={cat ?? roots[0]?.id}
+        defaultValue={cat ?? roots[0]?.id ?? ""}
         className="space-y-3"
       >
         {roots.map((root) => {
