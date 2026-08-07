@@ -142,9 +142,20 @@ function OrdersPage() {
 
           <ul className="space-y-1 border-t pt-3 text-sm">
             {(o["order_items"] ?? []).map((it: Record<string, any>) => (
-              <li key={it["id"]} className="flex justify-between gap-2">
+              <li
+                key={it["id"]}
+                className={cn(
+                  "flex justify-between gap-2",
+                  it["is_unavailable"] && "text-muted-foreground line-through",
+                )}
+              >
                 <span className="min-w-0 truncate">
                   {it["product_name"]} × {it["quantity"]}
+                  {it["is_unavailable"] && (
+                    <span className="ms-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive no-underline">
+                      {t("unavailableItem")}
+                    </span>
+                  )}
                 </span>
                 <span className="shrink-0 font-medium">
                   {formatIQD(Number(it["unit_price"]) * Number(it["quantity"]), lang)}
@@ -152,6 +163,32 @@ function OrdersPage() {
               </li>
             ))}
           </ul>
+
+          {o["needs_customer_action"] && o["status"] === "review" && (
+            <div className="space-y-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3">
+              <p className="text-sm font-medium text-destructive">{t("orderNeedsAction")}</p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  className="flex-1 rounded-full"
+                  disabled={busyId === o["id"]}
+                  onClick={() => void onResolve(String(o["id"]), "continue")}
+                >
+                  {t("continueOrder")}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 rounded-full"
+                  disabled={busyId === o["id"]}
+                  onClick={() => void onResolve(String(o["id"]), "change")}
+                >
+                  {t("changeItem")}
+                </Button>
+              </div>
+            </div>
+          )}
+
 
           <dl className="space-y-1 border-t pt-3 text-sm">
             <div className="flex justify-between">
