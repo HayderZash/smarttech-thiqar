@@ -291,6 +291,13 @@ function CartPage() {
               <dd>-{formatIQD(discount, lang)}</dd>
             </div>
           )}
+          {firstOrderDiscount > 0 && (
+            <div className="flex justify-between text-destructive">
+              <dt>{t("firstOrderDiscount")}</dt>
+              <dd>-{formatIQD(firstOrderDiscount, lang)}</dd>
+            </div>
+          )}
+
           <div className="flex justify-between">
             <dt className="text-muted-foreground">{t("shipping")}</dt>
             <dd className="font-medium">{formatIQD(shipping, lang)}</dd>
