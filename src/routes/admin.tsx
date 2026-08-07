@@ -69,17 +69,51 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-/** Uploads to the private store-media bucket and returns a long-lived signed URL. */
-async function uploadMedia(file: File, folder: string) {
-  const path = `${folder}/${crypto.randomUUID()}-${file.name.replace(/[^\w.-]/g, "_")}`;
-  const { error } = await supabase.storage.from("store-media").upload(path, file, { upsert: true });
-  if (error) throw error;
-  const { data, error: signErr } = await supabase.storage
-    .from("store-media")
-    .createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
-  if (signErr) throw signErr;
-  return data.signedUrl;
+/** Shrinks big images in the browser so uploads don't fail on slow/large payloads. */
+async function compressImage(file: File, max = 1024): Promise<File> {
+  if (!file.type.startsWith("image/") || file.type === "image/svg+xml") return file;
+  if (file.size < 300 * 1024) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/webp", 0.85));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.webp`, { type: "image/webp" });
+  } catch {
+    return file;
+  }
 }
+
+/** Uploads to the private store-media bucket and returns a long-lived signed URL. */
+async function uploadMedia(input: File, folder: string) {
+  const file = await compressImage(input);
+  const path = `${folder}/${crypto.randomUUID()}-${file.name.replace(/[^\w.-]/g, "_")}`;
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const { error } = await supabase.storage
+        .from("store-media")
+        .upload(path, file, { upsert: true, contentType: file.type || "application/octet-stream" });
+      if (error) throw error;
+      const { data, error: signErr } = await supabase.storage
+        .from("store-media")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+      if (signErr) throw signErr;
+      return data.signedUrl;
+    } catch (err) {
+      lastErr = err;
+      await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error("فشل رفع الملف");
+}
+
 
 function FileField({
   label,
