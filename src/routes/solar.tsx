@@ -74,6 +74,10 @@ function SolarPage() {
   const [amps, setAmps] = useState(20);
   const [ampHours, setAmpHours] = useState(6);
 
+  // national grid alternating schedule
+  const [gridOn, setGridOn] = useState(6);
+  const [gridOff, setGridOff] = useState(6);
+
   // system settings
   const [panelWatt, setPanelWatt] = useState(DEFAULTS.panelWatt);
   const [sunHours, setSunHours] = useState(DEFAULTS.sunHours);
@@ -98,13 +102,23 @@ function SolarPage() {
 
   const peakW =
     mode === "loads" ? devices.reduce((s, d) => s + d.watt * d.qty, 0) : amps * AC_VOLT;
-  const dailyWh =
+  const rawDailyWh =
     mode === "loads" ? devices.reduce((s, d) => s + d.watt * d.qty * d.hours, 0) : peakW * ampHours;
 
+  // internal: only the outage share of the day must be covered by the system,
+  // split between daylight (direct from panels) and night (from batteries).
+  const cycle = (gridOn || 0) + (gridOff || 0);
+  const outageShare = cycle > 0 ? Math.min(1, (gridOff || 0) / cycle) : 1;
+  const dailyWh = rawDailyWh * outageShare;
+  const DAYLIGHT_SHARE = 0.5; // alternating outages fall evenly on day/night
+  const nightWh = dailyWh * (1 - DAYLIGHT_SHARE);
+  const dayWh = dailyWh * DAYLIGHT_SHARE;
+  const genWh = dayWh / 0.9 + nightWh / 0.85; // inverter loss vs battery round-trip loss
+
   const panelDen = (panelWatt || 1) * (sunHours || 1) * 0.8;
-  const panels = Math.ceil(dailyWh / panelDen) || 0;
+  const panels = Math.ceil(genWh / panelDen) || 0;
   const battWh = (batteryAh || 1) * (batteryVolt || 1) * DOD;
-  const batteries = Math.ceil(dailyWh / battWh) || 0;
+  const batteries = Math.ceil(nightWh / battWh) || 0;
   const autoInverterKw = Math.max(1, Math.ceil((peakW * 1.3) / 1000));
   const inverterKw = inverterMode === "auto" ? autoInverterKw : inverterManual || 0;
   const inverterOk = inverterKw * 1000 >= peakW * 1.1;
@@ -114,14 +128,15 @@ function SolarPage() {
   const qtyFor = (c: SolarComponent) => {
     if (c.kind === "panel") {
       const den = (c.capacity || 1) * (sunHours || 1) * 0.8;
-      return Math.max(1, Math.ceil(dailyWh / den) || 1);
+      return Math.max(1, Math.ceil(genWh / den) || 1);
     }
     if (c.kind === "battery") {
       const wh = (c.capacity || 1) * (c.voltage || 12) * DOD;
-      return Math.max(1, Math.ceil(dailyWh / wh) || 1);
+      return Math.max(1, Math.ceil(nightWh / wh) || 1);
     }
     return Math.max(1, Math.ceil((peakW * 1.3) / 1000 / (c.capacity || 1)) || 1);
   };
+
 
   const tiers = (["economy", "mid", "pro"] as const).filter((tr) =>
     all.some((c) => c.tier === tr),
@@ -287,6 +302,19 @@ th{background:#eaf3ec}tfoot td{font-weight:800;background:#f6f2e8}
         </div>
       )}
 
+      {/* national grid schedule */}
+      <div className="mt-4 rounded-2xl border bg-card p-3">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label={t("gridOnHours")}>
+            <NumberField value={gridOn} onValueChange={(v) => setGridOn(v ?? 0)} />
+          </Field>
+          <Field label={t("gridOffHours")}>
+            <NumberField value={gridOff} onValueChange={(v) => setGridOff(v ?? 0)} />
+          </Field>
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">{t("gridNote")}</p>
+      </div>
+
       {/* system settings */}
       <div className="mt-4 rounded-2xl border bg-card p-3">
         <div className="flex items-center justify-between gap-2">
@@ -341,7 +369,7 @@ th{background:#eaf3ec}tfoot td{font-weight:800;background:#f6f2e8}
 
       <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
         {[
-          { label: t("dailyEnergy"), value: `${(dailyWh / 1000).toFixed(2)} kWh` },
+          { label: t("coveredEnergy"), value: `${(dailyWh / 1000).toFixed(2)} kWh` },
           { label: t("peakLoad"), value: `${(peakW / 1000).toFixed(2)} kW` },
           { label: `${t("panelsNeeded")} (${panelWatt}W)`, value: String(panels) },
           {
