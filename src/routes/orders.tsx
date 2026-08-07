@@ -326,6 +326,8 @@ function OrdersPage() {
             </p>
           )}
 
+          {o["status"] === "review" && <AddItemDialog orderId={String(o["id"])} />}
+
           {o["status"] === "review" && (
             <Button
               variant="outline"
@@ -337,6 +339,7 @@ function OrdersPage() {
               {t("cancelOrder")}
             </Button>
           )}
+
 
         </article>
       ))}
