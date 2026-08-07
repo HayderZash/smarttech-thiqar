@@ -218,6 +218,23 @@ const dict = {
   },
   firstOrderDiscount: { ar: "خصم أول طلب (5%)", en: "First order discount (5%)" },
 
+  // unavailable items / notifications
+  unavailableItem: { ar: "غير متوفر", en: "Unavailable" },
+  markUnavailable: { ar: "تعليم كغير متوفر", en: "Mark unavailable" },
+  markAvailable: { ar: "إرجاع كمتوفر", en: "Mark available" },
+  orderNeedsAction: {
+    ar: "أحد المنتجات غير متوفر حالياً. يمكنك إكمال الطلب بدون هذا المنتج أو طلب تغييره قبل بدء التجهيز.",
+    en: "One of the items is unavailable. Continue without it, or request a change before preparation starts.",
+  },
+  continueOrder: { ar: "إكمال الطلب", en: "Continue order" },
+  changeItem: { ar: "تغيير المنتج", en: "Change item" },
+  actionSaved: { ar: "تم إرسال ردك", en: "Your response was sent" },
+  notifications: { ar: "الإشعارات", en: "Notifications" },
+  noNotifications: { ar: "لا توجد إشعارات", en: "No notifications" },
+  markAllRead: { ar: "تعليم الكل كمقروء", en: "Mark all as read" },
+
+
+
 
 
 

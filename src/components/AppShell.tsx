@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
+import { NotificationsBell } from "@/components/NotificationsBell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -327,6 +328,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             )}
           </nav>
+
+          <NotificationsBell />
 
           <Button
             variant="ghost"
