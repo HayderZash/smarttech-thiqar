@@ -41,6 +41,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Pagination } from "@/components/Pagination";
+import { CropSettingsPanel } from "@/components/CropSettingsPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { CATEGORY_ICON_KEYS, CategoryIcon } from "@/lib/category-icons";
 import { useAuth } from "@/lib/auth";
@@ -1697,6 +1698,8 @@ function AdminPage() {
               ))}
             </div>
           </Panel>
+
+          <CropSettingsPanel />
 
           <Button
             className="w-full"
