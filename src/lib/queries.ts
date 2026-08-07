@@ -73,7 +73,7 @@ export const categoriesQuery = queryOptions({
   queryFn: async (): Promise<Category[]> => {
     const { data, error } = await supabase
       .from("categories")
-      .select("id, name_ar, name_en, image_url, parent_id, sort_order")
+      .select("id, name_ar, name_en, image_url, icon, parent_id, sort_order")
       .order("sort_order");
     if (error) throw error;
     return (data ?? []) as Category[];
@@ -97,7 +97,9 @@ export const bannersQuery = queryOptions({
   queryFn: async () => {
     const { data, error } = await supabase
       .from("banners")
-      .select("id, image_url, title_ar, title_en, link_url, is_active, sort_order")
+      .select(
+        "id, image_url, title_ar, title_en, description_ar, description_en, link_url, is_active, sort_order",
+      )
       .eq("is_active", true)
       .order("sort_order");
     if (error) throw error;
