@@ -187,7 +187,7 @@ th{background:#eaf3ec}tfoot td{font-weight:800;background:#f6f2e8}
 <p>${tierLabel[activeTier ?? "mid"] ?? ""} · ${t("dailyEnergy")}: ${(dailyWh / 1000).toFixed(2)} kWh · ${t(
       "peakLoad",
     )}: ${(peakW / 1000).toFixed(2)} kW</p>
-<table><thead><tr><th>${groupLabel["panel"]}/${groupLabel["battery"]}</th><th>${t("itemName")}</th><th>${t(
+<table><thead><tr><th>${localized(lang, "القسم", "Group")}</th><th>${t("itemName")}</th><th>${t(
       "qtyNeeded",
     )}</th><th>${t("unitPriceLabel")}</th><th>${t("lineTotal")}</th></tr></thead><tbody>${rows}</tbody>
 <tfoot><tr><td colspan="4">${t("totalCost")}</td><td dir="ltr">${formatIQD(total, lang)}</td></tr></tfoot></table>
