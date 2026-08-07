@@ -219,9 +219,10 @@ async function resolveChatId(
   return String(id);
 }
 
-async function notifyTelegram(
+/** Sends a plain text message to the store's Telegram admin chat. */
+async function sendTelegramText(
   supabase: { from: (t: string) => any },
-  payload: NotifyPayload,
+  text: string,
 ): Promise<void> {
   try {
     const lovableKey = process.env["LOVABLE_API_KEY"];
@@ -246,17 +247,6 @@ async function notifyTelegram(
     }
     if (!chatId) return;
 
-
-    const itemLines = payload.lines.map((l) => `• ${l.product_name} × ${l.quantity}`).join("\n");
-    const text = [
-      `📦 طلب جديد # ${payload.orderNumber}`,
-      `👤 الزبون: ${payload.name}`,
-      `📞 الهاتف: ${payload.phone}`,
-      `📍 المحافظة والنقطة الدالة: ${payload.governorate} - ${payload.landmark}`,
-      `🛒 المنتجات:\n${itemLines}`,
-      `💰 المبلغ الإجمالي مع التوصيل: ${payload.total.toLocaleString("en-US")} د.ع`,
-    ].join("\n");
-
     const res = await fetch(`${GATEWAY}/sendMessage`, {
       method: "POST",
       headers: tgHeaders(lovableKey, telegramKey),
@@ -270,6 +260,23 @@ async function notifyTelegram(
     console.error("Telegram notify error", err);
   }
 }
+
+async function notifyTelegram(
+  supabase: { from: (t: string) => any },
+  payload: NotifyPayload,
+): Promise<void> {
+  const itemLines = payload.lines.map((l) => `• ${l.product_name} × ${l.quantity}`).join("\n");
+  const text = [
+    `📦 طلب جديد # ${payload.orderNumber}`,
+    `👤 الزبون: ${payload.name}`,
+    `📞 الهاتف: ${payload.phone}`,
+    `📍 المحافظة والنقطة الدالة: ${payload.governorate} - ${payload.landmark}`,
+    `🛒 المنتجات:\n${itemLines}`,
+    `💰 المبلغ الإجمالي مع التوصيل: ${payload.total.toLocaleString("en-US")} د.ع`,
+  ].join("\n");
+  await sendTelegramText(supabase, text);
+}
+
 
 const unavailableSchema = z.object({
   order_item_id: z.string().uuid(),
@@ -398,4 +405,96 @@ export const cancelOrder = createServerFn({ method: "POST" })
       .eq("status", "review");
     if (updErr) throw new Error(updErr.message);
     return { ok: true as const };
+  });
+
+const addItemSchema = z.object({
+  order_id: z.string().uuid(),
+  product_id: z.string().uuid(),
+  quantity: z.number().int().min(1).max(999),
+});
+
+/** Customer adds a product to an existing order, allowed only before preparation starts. */
+export const addOrderItem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => addItemSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: order, error } = await supabase
+      .from("orders")
+      .select("id, order_number, status, customer_id, customer_name, phone, shipping_fee, discount_amount, governorate_name, landmark")
+      .eq("id", data.order_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!order || order.customer_id !== userId) throw new Error("Order not found");
+    if (order.status !== "review") throw new Error("CANNOT_MODIFY");
+
+    const { data: product } = await supabase
+      .from("products")
+      .select("id, name_ar, name_en, price, discount_price")
+      .eq("id", data.product_id)
+      .maybeSingle();
+    if (!product) throw new Error("Product not found");
+
+    const unit =
+      product.discount_price != null &&
+      Number(product.discount_price) > 0 &&
+      Number(product.discount_price) < Number(product.price)
+        ? Number(product.discount_price)
+        : Number(product.price);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: existing } = await supabaseAdmin
+      .from("order_items")
+      .select("id, quantity")
+      .eq("order_id", order.id)
+      .eq("product_id", product.id)
+      .eq("is_unavailable", false)
+      .maybeSingle();
+
+    if (existing) {
+      await supabaseAdmin
+        .from("order_items")
+        .update({ quantity: Number(existing.quantity) + data.quantity, unit_price: unit })
+        .eq("id", existing.id);
+    } else {
+      await supabaseAdmin.from("order_items").insert({
+        order_id: order.id,
+        product_id: product.id,
+        product_name: product.name_ar || product.name_en,
+        quantity: data.quantity,
+        unit_price: unit,
+      });
+    }
+
+    const { data: lines } = await supabaseAdmin
+      .from("order_items")
+      .select("product_name, quantity, unit_price, is_unavailable")
+      .eq("order_id", order.id);
+
+    const active = (lines ?? []).filter((l) => !l.is_unavailable);
+    const subtotal = active.reduce((s, l) => s + Number(l.unit_price) * Number(l.quantity), 0);
+    const discount = Math.min(Number(order.discount_amount ?? 0), subtotal);
+    const total = Math.max(0, subtotal - discount) + Number(order.shipping_fee ?? 0);
+
+    const { error: updErr } = await supabaseAdmin
+      .from("orders")
+      .update({ subtotal, discount_amount: discount, total_amount: total })
+      .eq("id", order.id)
+      .eq("status", "review");
+    if (updErr) throw new Error(updErr.message);
+
+    const itemLines = active.map((l) => `• ${l.product_name} × ${l.quantity}`).join("\n");
+    await sendTelegramText(supabase, [
+      `✏️ تعديل طلب # ${order.order_number} — إضافة منتج`,
+      `👤 الزبون: ${order.customer_name}`,
+      `📞 الهاتف: ${order.phone}`,
+      `📍 ${order.governorate_name} - ${order.landmark}`,
+      `➕ تمت إضافة: ${product.name_ar || product.name_en} × ${data.quantity}`,
+      `🛒 القائمة النهائية:\n${itemLines}`,
+      `💰 المبلغ الإجمالي مع التوصيل: ${total.toLocaleString("en-US")} د.ع`,
+    ].join("\n"));
+
+    return { ok: true as const, total };
   });

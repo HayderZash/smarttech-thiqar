@@ -1,17 +1,27 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, XCircle } from "lucide-react";
+import { Check, Plus, XCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { ORDER_STATUSES, formatIQD, statusLabel } from "@/lib/format";
 import { useLang } from "@/lib/i18n";
-import { cancelOrder, resolveOrderIssue } from "@/lib/orders.functions";
+import { addOrderItem, cancelOrder, resolveOrderIssue } from "@/lib/orders.functions";
 import { myOrdersQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
+
 
 
 export const Route = createFileRoute("/orders")({
@@ -73,6 +83,93 @@ function Tracker({ status }: { status: string }) {
     </ol>
   );
 }
+
+type Hit = { id: string; name_ar: string; name_en: string; price: number; discount_price: number | null };
+
+function AddItemDialog({ orderId }: { orderId: string }) {
+  const { lang, t } = useLang();
+  const queryClient = useQueryClient();
+  const addItem = useServerFn(addOrderItem);
+  const [open, setOpen] = useState(false);
+  const [term, setTerm] = useState("");
+  const [hits, setHits] = useState<Hit[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  const runSearch = async (value: string): Promise<void> => {
+    setTerm(value);
+    const q = value.trim();
+    if (q.length < 2) {
+      setHits([]);
+      return;
+    }
+    const { data } = await supabase
+      .from("products")
+      .select("id, name_ar, name_en, price, discount_price")
+      .or(`name_ar.ilike.%${q}%,name_en.ilike.%${q}%,sku.ilike.%${q}%`)
+      .limit(20);
+    setHits((data ?? []) as Hit[]);
+  };
+
+  const onAdd = async (productId: string): Promise<void> => {
+    setBusy(true);
+    try {
+      await addItem({ data: { order_id: orderId, product_id: productId, quantity: 1 } });
+      await queryClient.invalidateQueries({ queryKey: ["orders"] });
+      toast.success(t("itemAdded"));
+      setOpen(false);
+      setTerm("");
+      setHits([]);
+    } catch (err) {
+      const msg =
+        err instanceof Error && err.message.includes("CANNOT_MODIFY") ? t("cannotModify") : t("error");
+      toast.error(msg);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="w-full rounded-full">
+          <Plus className="size-4" />
+          {t("addItemToOrder")}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-start">{t("addItemToOrder")}</DialogTitle>
+        </DialogHeader>
+        <p className="text-xs text-muted-foreground">{t("addItemHint")}</p>
+        <Input
+          value={term}
+          onChange={(e) => void runSearch(e.target.value)}
+          placeholder={t("searchProductToAdd")}
+        />
+        <ul className="max-h-72 space-y-2 overflow-y-auto">
+          {hits.map((p) => {
+            const unit =
+              p.discount_price != null && Number(p.discount_price) > 0 && Number(p.discount_price) < Number(p.price)
+                ? Number(p.discount_price)
+                : Number(p.price);
+            return (
+              <li key={p.id} className="flex items-center justify-between gap-2 rounded-xl border p-2">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{lang === "ar" ? p.name_ar : p.name_en || p.name_ar}</p>
+                  <p className="text-xs text-muted-foreground">{formatIQD(unit, lang)}</p>
+                </div>
+                <Button size="sm" className="rounded-full" disabled={busy} onClick={() => void onAdd(p.id)}>
+                  {t("add")}
+                </Button>
+              </li>
+            );
+          })}
+        </ul>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function OrdersPage() {
   const { lang, t } = useLang();
@@ -229,6 +326,8 @@ function OrdersPage() {
             </p>
           )}
 
+          {o["status"] === "review" && <AddItemDialog orderId={String(o["id"])} />}
+
           {o["status"] === "review" && (
             <Button
               variant="outline"
@@ -240,6 +339,7 @@ function OrdersPage() {
               {t("cancelOrder")}
             </Button>
           )}
+
 
         </article>
       ))}
