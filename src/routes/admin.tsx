@@ -975,11 +975,11 @@ function AdminPage() {
             </div>
             <div className="space-y-2">
               <Label>القيمة</Label>
-              <Input
-                type="number"
+              <NumberField
                 value={couponForm.discount_value}
-                onChange={(e) => setCouponForm({ ...couponForm, discount_value: Number(e.target.value) })}
+                onValueChange={(v) => setCouponForm({ ...couponForm, discount_value: v ?? 0 })}
               />
+
             </div>
             <Button
               className="sm:col-span-3"
