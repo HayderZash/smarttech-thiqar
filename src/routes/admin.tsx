@@ -1,6 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Trash2, Upload } from "lucide-react";
+import {
+  ClipboardList,
+  Image as ImageIcon,
+  LayoutGrid,
+  Package,
+  Plus,
+  Settings,
+  Ticket,
+  Trash2,
+  Truck,
+  Upload,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -150,6 +161,7 @@ function AdminPage() {
   const [bform, setBform] = useState({ image_url: "", title_ar: "", title_en: "", link_url: "" });
   const [couponForm, setCouponForm] = useState({ code: "", discount_type: "fixed", discount_value: 0 });
   const [store, setStore] = useState<Record<string, string>>({});
+  const [tab, setTab] = useState("orders");
 
   const saveProduct = useMutation({
     mutationFn: async () => {
@@ -187,34 +199,63 @@ function AdminPage() {
   const pending = allOrders.filter((o) => o["status"] === "review").length;
   const lowStock = (products.data ?? []).filter((p) => p.stock_qty <= 2);
 
+  const sections = [
+    { value: "orders", label: "الطلبات", desc: "متابعة الطلبات وتحديث حالتها", icon: ClipboardList },
+    { value: "products", label: "المنتجات", desc: "إضافة المنتجات واستيرادها من Excel", icon: Package },
+    { value: "categories", label: "الأقسام", desc: "تنظيم أقسام المتجر", icon: LayoutGrid },
+    { value: "shipping", label: "المحافظات", desc: "أجور التوصيل لكل محافظة", icon: Truck },
+    { value: "banners", label: "البانرات", desc: "صور الواجهة الرئيسية", icon: ImageIcon },
+    { value: "coupons", label: "الكوبونات", desc: "أكواد الخصم", icon: Ticket },
+    { value: "settings", label: "الإعدادات", desc: "معلومات المتجر والتواصل", icon: Settings },
+  ];
+  const active = sections.find((s) => s.value === tab) ?? sections[0]!;
+
   return (
-    <div className="space-y-5">
-      <h1 className="text-xl font-bold">لوحة الإدارة</h1>
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-xl font-bold">لوحة الإدارة</h1>
+        <p className="text-xs text-muted-foreground">إدارة المتجر مقسّمة إلى أقسام مستقلة</p>
+      </header>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {[
-          { label: "الطلبات", value: allOrders.length },
-          { label: "قيد المراجعة", value: pending },
-          { label: "المنتجات", value: products.data?.length ?? 0 },
-          { label: "المبيعات", value: formatIQD(revenue, lang) },
-        ].map((s) => (
-          <div key={s.label} className="rounded-2xl border bg-card p-4">
-            <p className="text-xs text-muted-foreground">{s.label}</p>
-            <p className="mt-1 text-lg font-bold text-primary">{s.value}</p>
-          </div>
-        ))}
-      </div>
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-muted-foreground">نظرة عامة</h2>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[
+            { label: "الطلبات", value: allOrders.length },
+            { label: "قيد المراجعة", value: pending },
+            { label: "المنتجات", value: products.data?.length ?? 0 },
+            { label: "المبيعات", value: formatIQD(revenue, lang) },
+          ].map((s) => (
+            <div key={s.label} className="rounded-2xl border bg-card p-4">
+              <p className="text-xs text-muted-foreground">{s.label}</p>
+              <p className="mt-1 text-lg font-bold text-primary">{s.value}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-      <Tabs defaultValue="orders">
-        <TabsList className="flex w-full flex-wrap justify-start">
-          <TabsTrigger value="orders">الطلبات</TabsTrigger>
-          <TabsTrigger value="products">المنتجات</TabsTrigger>
-          <TabsTrigger value="categories">الأقسام</TabsTrigger>
-          <TabsTrigger value="shipping">المحافظات</TabsTrigger>
-          <TabsTrigger value="banners">البانرات</TabsTrigger>
-          <TabsTrigger value="coupons">الكوبونات</TabsTrigger>
-          <TabsTrigger value="settings">الإعدادات</TabsTrigger>
-        </TabsList>
+      <Tabs value={tab} onValueChange={setTab} className="space-y-4">
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-muted-foreground">أقسام الإدارة</h2>
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 sm:grid-cols-4">
+            {sections.map((s) => (
+              <TabsTrigger
+                key={s.value}
+                value={s.value}
+                className="flex h-auto w-full flex-col items-center gap-1.5 rounded-2xl border bg-card px-2 py-3 text-xs font-semibold data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <s.icon className="size-4" />
+                {s.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </section>
+
+        <div className="space-y-1 border-t pt-4">
+          <h2 className="text-base font-bold">{active.label}</h2>
+          <p className="text-xs text-muted-foreground">{active.desc}</p>
+        </div>
+
 
         {/* ORDERS */}
         <TabsContent value="orders" className="space-y-3">
