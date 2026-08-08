@@ -973,8 +973,18 @@ function AdminPage() {
                   else invalidate(["admin-orders", "orders"]);
                 }}
               />
+              <DeleteOrderButton
+                orderId={String(o["id"])}
+                orderNumber={o["order_number"]}
+                onDone={() => invalidate(["admin-orders", "orders"])}
+              />
             </div>
           ))}
+          <Pagination
+            page={currentOrderPage}
+            totalPages={orderTotalPages}
+            onPage={setOrderPage}
+          />
         </TabsContent>
 
         {/* PRODUCTS */}
