@@ -56,6 +56,12 @@ function CartPage() {
   const gov = (governorates ?? []).find((g) => g.id === govId);
   const shipping = Number(gov?.shipping_cost ?? 0);
   const { data: myOrders } = useQuery(myOrdersQuery(user?.id)) as { data: unknown[] | undefined };
+  const itemsSavings = items.reduce(
+    (n, i) => n + Math.max(0, Number(i.original_price ?? i.price) - i.price) * i.quantity,
+    0,
+  );
+  const itemsSavingsPercent =
+    itemsSavings > 0 ? Math.round((itemsSavings / (subtotal + itemsSavings)) * 100) : 0;
   const firstOrderDiscount = user && (myOrders?.length ?? 0) === 0 ? Math.round((subtotal * 5) / 100) : 0;
   const total = Math.max(0, subtotal - discount - firstOrderDiscount) + shipping;
 
@@ -167,7 +173,33 @@ function CartPage() {
               <p className="line-clamp-2 text-sm font-semibold">
                 {localized(lang, i.name_ar, i.name_en)}
               </p>
-              <p className="text-sm font-bold text-primary">{formatIQD(i.price * i.quantity, lang)}</p>
+              {(() => {
+                const orig = Number(i.original_price ?? i.price);
+                const off = orig > i.price ? Math.round(((orig - i.price) / orig) * 100) : 0;
+                return (
+                  <div className="flex flex-wrap items-baseline gap-2">
+                    <p
+                      className={
+                        off > 0
+                          ? "text-sm font-bold text-destructive"
+                          : "text-sm font-bold text-primary"
+                      }
+                    >
+                      {formatIQD(i.price * i.quantity, lang)}
+                    </p>
+                    {off > 0 && (
+                      <>
+                        <span className="text-xs text-muted-foreground line-through">
+                          {formatIQD(orig * i.quantity, lang)}
+                        </span>
+                        <span className="rounded-full bg-destructive px-2 py-0.5 text-[11px] font-bold text-destructive-foreground">
+                          -{off}%
+                        </span>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="mt-auto flex items-center gap-2">
                 <div className="flex items-center gap-1 rounded-full border p-0.5">
                   <Button
@@ -281,6 +313,26 @@ function CartPage() {
         </div>
 
         <dl className="space-y-1.5 border-t pt-3 text-sm">
+          {itemsSavings > 0 && (
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">
+                {lang === "ar" ? "المجموع قبل الخصم" : "Before discount"}
+              </dt>
+              <dd className="text-muted-foreground line-through">
+                {formatIQD(subtotal + itemsSavings, lang)}
+              </dd>
+            </div>
+          )}
+          {itemsSavings > 0 && (
+            <div className="flex justify-between text-destructive">
+              <dt>
+                {lang === "ar"
+                  ? `خصم المنتجات المخفضة (${itemsSavingsPercent}%)`
+                  : `Product discounts (${itemsSavingsPercent}%)`}
+              </dt>
+              <dd>-{formatIQD(itemsSavings, lang)}</dd>
+            </div>
+          )}
           <div className="flex justify-between">
             <dt className="text-muted-foreground">{t("subtotal")}</dt>
             <dd className="font-medium">{formatIQD(subtotal, lang)}</dd>
