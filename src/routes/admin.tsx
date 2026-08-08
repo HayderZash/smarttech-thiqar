@@ -1190,7 +1190,19 @@ function AdminPage() {
                       .update({ stock_qty: v })
                       .eq("id", p.id);
                     if (error) toast.error(error.message);
-                    else invalidate(["products"]);
+                    else {
+                      invalidate(["products"]);
+                      if (v > 0 && p.stock_qty <= 0) {
+                        try {
+                          const r = (await sendRestockNotice({
+                            data: { product_id: p.id, name: p.name_ar || "منتج" },
+                          })) as { sent: number };
+                          if (r.sent) toast.success(`تم إشعار ${r.sent} زبون بتوفر المنتج`);
+                        } catch {
+                          /* stock is updated even if the alert fails */
+                        }
+                      }
+                    }
                   }}
                 />
                 <Button
