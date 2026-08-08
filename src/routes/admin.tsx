@@ -426,6 +426,7 @@ function AdminPage() {
   const [q, setQ] = useState("");
   const [scope, setScope] = useState<"all" | "products" | "orders">("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [orderPage, setOrderPage] = useState(1);
 
   useEffect(() => {
     const stored = localStorage.getItem("admin_tab");
