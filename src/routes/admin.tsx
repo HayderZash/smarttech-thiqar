@@ -1957,7 +1957,9 @@ function AdminPage() {
                     </span>
                   </div>
                   <p className="mt-2 whitespace-pre-wrap text-sm">{m.message}</p>
+                  <SupportReply id={m.id} currentReply={m.admin_reply} />
                   <div className="mt-3 flex flex-wrap gap-2">
+
                     {m.phone && (
                       <a
                         href={whatsappLink(m.phone, `مرحباً ${m.sender_name}، بخصوص رسالتك للمتجر:`)}
