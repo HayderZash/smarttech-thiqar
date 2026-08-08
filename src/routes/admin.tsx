@@ -6,6 +6,7 @@ import {
   ClipboardList,
   Image as ImageIcon,
   LayoutGrid,
+  MessageSquare,
   Package,
   Pencil,
   Plus,
