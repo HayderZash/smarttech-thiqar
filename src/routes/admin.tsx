@@ -421,6 +421,7 @@ function AdminPage() {
   const changeStatus = useServerFn(updateOrderStatus);
   const addCoupon = useServerFn(createCoupon);
   const sendDealNotice = useServerFn(announceDeal);
+  const sendRestockNotice = useServerFn(notifyRestock);
   const [tab, setTab] = useState("orders");
   const [q, setQ] = useState("");
   const [scope, setScope] = useState<"all" | "products" | "orders">("all");
