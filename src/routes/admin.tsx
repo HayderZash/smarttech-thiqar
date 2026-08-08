@@ -26,6 +26,7 @@ import { NumberField } from "@/components/NumberField";
 import { PricingTiersEditor } from "@/components/PricingTiersEditor";
 import { announceDeal, createCoupon, updateOrderStatus } from "@/lib/admin.functions";
 import { BulkDeleteProducts } from "@/components/BulkDeleteProducts";
+import { OrderAdminTools } from "@/components/OrderAdminTools";
 import { CategoriesExcel } from "@/components/CategoriesExcel";
 import { ProductsExcel } from "@/components/ProductsExcel";
 import { Button } from "@/components/ui/button";
@@ -899,6 +900,8 @@ function AdminPage() {
                   </a>
                 </Button>
               </div>
+              <OrderAdminTools order={o} settings={(settings.data ?? {}) as Record<string, string>} />
+
               <Textarea
                 defaultValue={o["notes"]}
                 placeholder="ملاحظة تظهر للزبون"
