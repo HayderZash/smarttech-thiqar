@@ -403,6 +403,7 @@ function AdminPage() {
   const [prodPage, setProdPage] = useState(1);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editSignal, setEditSignal] = useState(0);
+  const [prevDiscount, setPrevDiscount] = useState<number | null>(null);
   const [couponForm, setCouponForm] = useState({
     code: "",
     discount_type: "fixed",
@@ -480,6 +481,11 @@ function AdminPage() {
   const startEdit = (p: Product) => {
     setEditingId(p.id);
     setEditSignal((n) => n + 1);
+    setPrevDiscount(
+      (p.base_discount_price ?? p.discount_price) === null
+        ? null
+        : Number(p.base_discount_price ?? p.discount_price),
+    );
     setTab("products");
     setPform({
       sku: p.sku ?? "",
