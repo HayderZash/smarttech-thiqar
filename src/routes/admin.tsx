@@ -26,6 +26,7 @@ import { NumberField } from "@/components/NumberField";
 import { PricingTiersEditor } from "@/components/PricingTiersEditor";
 import { announceDeal, createCoupon, notifyRestock, updateOrderStatus } from "@/lib/admin.functions";
 import { BulkDeleteProducts } from "@/components/BulkDeleteProducts";
+import { DeleteOrderButton } from "@/components/DeleteOrderButton";
 import { OrderAdminTools } from "@/components/OrderAdminTools";
 import { ProfitsExcel } from "@/components/ProfitsExcel";
 import { CategoriesExcel } from "@/components/CategoriesExcel";
@@ -426,6 +427,7 @@ function AdminPage() {
   const [q, setQ] = useState("");
   const [scope, setScope] = useState<"all" | "products" | "orders">("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [orderPage, setOrderPage] = useState(1);
 
   useEffect(() => {
     const stored = localStorage.getItem("admin_tab");
@@ -572,6 +574,16 @@ function AdminPage() {
       : allOrders.filter(
           (o) => matchOrder(o) && (statusFilter === "all" || o["status"] === statusFilter),
         );
+
+  const ORDERS_PER_PAGE = 5;
+  const orderTotalPages = Math.max(1, Math.ceil(visibleOrders.length / ORDERS_PER_PAGE));
+  const currentOrderPage = Math.min(orderPage, orderTotalPages);
+  const pagedOrders = visibleOrders.slice(
+    (currentOrderPage - 1) * ORDERS_PER_PAGE,
+    currentOrderPage * ORDERS_PER_PAGE,
+  );
+
+
 
   const visibleProducts =
     scope === "orders"
@@ -810,7 +822,10 @@ function AdminPage() {
                 <button
                   key={tab.key}
                   type="button"
-                  onClick={() => setStatusFilter(tab.key)}
+                  onClick={() => {
+                    setStatusFilter(tab.key);
+                    setOrderPage(1);
+                  }}
                   className={cn(
                     "rounded-full border px-3 py-1.5 text-xs font-semibold transition",
                     statusFilter === tab.key
@@ -837,7 +852,7 @@ function AdminPage() {
           {visibleOrders.length === 0 && (
             <p className="py-10 text-center text-sm text-muted-foreground">لا توجد طلبات</p>
           )}
-          {visibleOrders.map((o) => (
+          {pagedOrders.map((o) => (
             <div key={o["id"]} className="space-y-3 rounded-2xl border bg-card p-4">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                 <h3 className="flex items-center gap-2 truncate text-sm font-bold">
@@ -959,8 +974,18 @@ function AdminPage() {
                   else invalidate(["admin-orders", "orders"]);
                 }}
               />
+              <DeleteOrderButton
+                orderId={String(o["id"])}
+                orderNumber={o["order_number"]}
+                onDone={() => invalidate(["admin-orders", "orders"])}
+              />
             </div>
           ))}
+          <Pagination
+            page={currentOrderPage}
+            totalPages={orderTotalPages}
+            onPage={setOrderPage}
+          />
         </TabsContent>
 
         {/* PRODUCTS */}
