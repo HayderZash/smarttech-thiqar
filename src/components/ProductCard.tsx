@@ -61,7 +61,7 @@ export function ProductCard({
           wishlist.toggle(product.id);
           toast.success(liked ? t("removedFromWishlist") : t("addedToWishlist"));
         }}
-        className="absolute top-2 end-2 z-10 flex size-8 items-center justify-center rounded-full bg-background/85 backdrop-blur transition-colors hover:bg-background"
+        className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded-full bg-background/85 backdrop-blur transition-colors hover:bg-background"
       >
         <Heart className={cn("size-4", liked ? "fill-destructive text-destructive" : "text-muted-foreground")} />
       </button>
