@@ -12,6 +12,7 @@ const couponSchema = z.object({
   code: z.string().trim().min(1).max(60),
   discount_type: z.enum(["fixed", "percent"]),
   discount_value: z.number().min(0),
+  max_discount: z.number().min(0).nullable().optional(),
   expires_at: z.string().trim().max(40).optional().nullable(),
 });
 
@@ -117,6 +118,7 @@ export const createCoupon = createServerFn({ method: "POST" })
       code,
       discount_type: data.discount_type,
       discount_value: data.discount_value,
+      max_discount: data.max_discount && data.max_discount > 0 ? data.max_discount : null,
       expires_at: expires,
       is_active: true,
     });
@@ -126,13 +128,17 @@ export const createCoupon = createServerFn({ method: "POST" })
       data.discount_type === "percent"
         ? `${data.discount_value}%`
         : `${Math.round(data.discount_value).toLocaleString("en-US")} د.ع`;
+    const capText =
+      data.max_discount && data.max_discount > 0
+        ? ` (بحد أقصى ${Math.round(data.max_discount).toLocaleString("en-US")} د.ع)`
+        : "";
     const until = expires
       ? ` — صالح لغاية ${new Date(expires).toLocaleString("ar-IQ-u-nu-latn")}`
       : "";
     const sent = await broadcast(
       supabaseAdmin,
       "كود خصم جديد 🎁",
-      `استخدم الكود ${code} واحصل على خصم ${value}${until}.`,
+      `استخدم الكود ${code} واحصل على خصم ${value}${capText}${until}.`,
     );
     return { ok: true as const, sent };
   });

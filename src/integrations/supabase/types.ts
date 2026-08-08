@@ -103,6 +103,7 @@ export type Database = {
           expires_at: string | null
           id: string
           is_active: boolean
+          max_discount: number | null
         }
         Insert: {
           code: string
@@ -112,6 +113,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          max_discount?: number | null
         }
         Update: {
           code?: string
@@ -121,6 +123,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          max_discount?: number | null
         }
         Relationships: []
       }

@@ -60,8 +60,6 @@ function CartPage() {
     (n, i) => n + Math.max(0, Number(i.original_price ?? i.price) - i.price) * i.quantity,
     0,
   );
-  const itemsSavingsPercent =
-    itemsSavings > 0 ? Math.round((itemsSavings / (subtotal + itemsSavings)) * 100) : 0;
   const firstOrderDiscount = user && (myOrders?.length ?? 0) === 0 ? Math.round((subtotal * 5) / 100) : 0;
   const total = Math.max(0, subtotal - discount - firstOrderDiscount) + shipping;
 
@@ -323,16 +321,21 @@ function CartPage() {
               </dd>
             </div>
           )}
-          {itemsSavings > 0 && (
-            <div className="flex justify-between text-destructive">
-              <dt>
-                {lang === "ar"
-                  ? `خصم المنتجات المخفضة (${itemsSavingsPercent}%)`
-                  : `Product discounts (${itemsSavingsPercent}%)`}
-              </dt>
-              <dd>-{formatIQD(itemsSavings, lang)}</dd>
-            </div>
-          )}
+          {items
+            .filter((i) => Number(i.original_price ?? i.price) > i.price)
+            .map((i) => {
+              const orig = Number(i.original_price ?? i.price);
+              const off = Math.round(((orig - i.price) / orig) * 100);
+              return (
+                <div key={`sv-${i.id}`} className="flex justify-between gap-2 text-destructive">
+                  <dt className="line-clamp-1">
+                    {lang === "ar" ? "خصم" : "Discount"} {off}% —{" "}
+                    {localized(lang, i.name_ar, i.name_en)}
+                  </dt>
+                  <dd className="shrink-0">-{formatIQD((orig - i.price) * i.quantity, lang)}</dd>
+                </div>
+              );
+            })}
           <div className="flex justify-between">
             <dt className="text-muted-foreground">{t("subtotal")}</dt>
             <dd className="font-medium">{formatIQD(subtotal, lang)}</dd>

@@ -43,14 +43,16 @@ function isExpired(expiresAt: string | null | undefined) {
 }
 
 function computeDiscount(
-  coupon: { discount_type: string; discount_value: number } | null,
+  coupon: { discount_type: string; discount_value: number; max_discount?: number | null } | null,
   subtotal: number,
 ) {
   if (!coupon) return 0;
-  const raw =
+  let raw =
     coupon.discount_type === "percent"
       ? (subtotal * Number(coupon.discount_value)) / 100
       : Number(coupon.discount_value);
+  const cap = Number(coupon.max_discount ?? 0);
+  if (cap > 0) raw = Math.min(raw, cap);
   return Math.max(0, Math.min(subtotal, Math.round(raw)));
 }
 
@@ -62,7 +64,7 @@ export const validateCoupon = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: coupon } = await supabase
       .from("coupons")
-      .select("code, discount_type, discount_value, is_active, expires_at")
+      .select("code, discount_type, discount_value, max_discount, is_active, expires_at")
       .eq("code", data.code.toUpperCase())
       .eq("is_active", true)
       .maybeSingle();
@@ -96,11 +98,13 @@ export const placeOrder = createServerFn({ method: "POST" })
             : Number(p.price);
         const unit = applyPricing(base, tiers);
 
+        const listUnit = applyPricing(Number(p.price), tiers);
         return {
           product_id: p.id,
           product_name: p.name_ar || p.name_en,
           quantity: line.quantity,
           unit_price: unit,
+          list_price: listUnit,
         };
       })
       .filter((l): l is NonNullable<typeof l> => l !== null);
@@ -120,7 +124,7 @@ export const placeOrder = createServerFn({ method: "POST" })
     if (data.coupon_code) {
       const { data: coupon } = await supabase
         .from("coupons")
-        .select("code, discount_type, discount_value, expires_at")
+        .select("code, discount_type, discount_value, max_discount, expires_at")
         .eq("code", data.coupon_code.toUpperCase())
         .eq("is_active", true)
         .maybeSingle();
@@ -166,7 +170,15 @@ export const placeOrder = createServerFn({ method: "POST" })
 
     const { error: itemsErr } = await supabase
       .from("order_items")
-      .insert(lines.map((l) => ({ ...l, order_id: order.id })));
+      .insert(
+        lines.map((l) => ({
+          order_id: order.id,
+          product_id: l.product_id,
+          product_name: l.product_name,
+          quantity: l.quantity,
+          unit_price: l.unit_price,
+        })),
+      );
     if (itemsErr) throw new Error(itemsErr.message);
 
     // Decrement stock (best effort, admin remains the source of truth).
@@ -187,6 +199,10 @@ export const placeOrder = createServerFn({ method: "POST" })
       governorate: gov?.name_ar ?? "",
       landmark: data.landmark,
       lines,
+      subtotal,
+      shipping,
+      discount,
+      couponCode,
       total,
     });
 
@@ -199,7 +215,11 @@ type NotifyPayload = {
   phone: string;
   governorate: string;
   landmark: string;
-  lines: { product_name: string; quantity: number }[];
+  lines: { product_name: string; quantity: number; unit_price?: number; list_price?: number }[];
+  subtotal?: number;
+  shipping?: number;
+  discount?: number;
+  couponCode?: string | null;
   total: number;
 };
 
@@ -294,15 +314,42 @@ async function notifyTelegram(
   supabase: { from: (t: string) => any },
   payload: NotifyPayload,
 ): Promise<void> {
-  const itemLines = payload.lines.map((l) => `• ${l.product_name} × ${l.quantity}`).join("\n");
+  const iqd = (n: number) => `${Math.round(n).toLocaleString("en-US")} د.ع`;
+  const itemLines = payload.lines
+    .map((l) => {
+      const unit = Number(l.unit_price ?? 0);
+      const list = Number(l.list_price ?? unit);
+      const off = list > unit && list > 0 ? Math.round(((list - unit) / list) * 100) : 0;
+      const pricePart = unit
+        ? off > 0
+          ? ` — ${iqd(unit)} (بدل ${iqd(list)} خصم ${off}%)`
+          : ` — ${iqd(unit)}`
+        : "";
+      return `• ${l.product_name} × ${l.quantity}${pricePart}`;
+    })
+    .join("\n");
+
+  const itemsSavings = payload.lines.reduce(
+    (s, l) => s + Math.max(0, Number(l.list_price ?? 0) - Number(l.unit_price ?? 0)) * l.quantity,
+    0,
+  );
+
   const text = [
     `📦 طلب جديد # ${payload.orderNumber}`,
     `👤 الزبون: ${payload.name}`,
     `📞 الهاتف: ${payload.phone}`,
     `📍 المحافظة والنقطة الدالة: ${payload.governorate} - ${payload.landmark}`,
     `🛒 المنتجات:\n${itemLines}`,
-    `💰 المبلغ الإجمالي مع التوصيل: ${payload.total.toLocaleString("en-US")} د.ع`,
-  ].join("\n");
+    itemsSavings > 0 ? `🏷️ خصم المنتجات المخفّضة: -${iqd(itemsSavings)}` : "",
+    payload.subtotal != null ? `🧾 المجموع الفرعي: ${iqd(payload.subtotal)}` : "",
+    payload.discount
+      ? `🎁 خصم${payload.couponCode ? ` (كوبون ${payload.couponCode})` : ""}: -${iqd(payload.discount)}`
+      : "",
+    payload.shipping != null ? `🚚 التوصيل: ${iqd(payload.shipping)}` : "",
+    `💰 المبلغ الإجمالي مع التوصيل: ${iqd(payload.total)}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
   await sendTelegramText(supabase, text);
 }
 
