@@ -1,15 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, RefreshCw } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { DealsTicker } from "@/components/DealsTicker";
 import { NewsCarousel } from "@/components/NewsCarousel";
+import { Pagination } from "@/components/Pagination";
 import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard";
+import { Button } from "@/components/ui/button";
 import { discountPercent } from "@/lib/format";
 import { CategoryIcon } from "@/lib/category-icons";
 import { categoryPathLabel } from "@/lib/category-path";
 import { localized, useLang } from "@/lib/i18n";
-import { bannersQuery, categoriesQuery, productsQuery } from "@/lib/queries";
+import {
+  bannersQuery,
+  categoriesQuery,
+  popularProductIdsQuery,
+  productsQuery,
+  settingsQuery,
+} from "@/lib/queries";
+import { rotationSeed, seededShuffle } from "@/lib/shuffle";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
