@@ -442,20 +442,40 @@ function AdminPage() {
           .filter(Boolean),
         deal_ends_at: deal_ends_at ? new Date(deal_ends_at).toISOString() : null,
       };
-      const { error } = editingId
-        ? await supabase.from("products").update(values).eq("id", editingId)
-        : await supabase.from("products").insert(values);
+      const { data, error } = editingId
+        ? await supabase.from("products").update(values).eq("id", editingId).select("id").single()
+        : await supabase.from("products").insert(values).select("id").single();
       if (error) throw error;
+
+      // A newly added (or changed) discount is announced to all customers.
+      const dp = Number(values.discount_price ?? 0);
+      const price = Number(values.price) || 0;
+      const percent = dp > 0 && dp < price ? Math.round(((price - dp) / price) * 100) : 0;
+      if (percent > 0 && dp !== prevDiscount && data?.id) {
+        try {
+          await sendDealNotice({
+            data: {
+              product_id: String(data.id),
+              name: values.name_ar || values.name_en || "منتج",
+              percent,
+            },
+          });
+        } catch {
+          /* the product is saved even if the announcement fails */
+        }
+      }
     },
     onSuccess: () => {
       const wasEditing = !!editingId;
       setPform({ ...emptyProduct });
       setEditingId(null);
+      setPrevDiscount(null);
       invalidate(["products"]);
       toast.success(wasEditing ? "تم حفظ التعديلات" : "تمت الإضافة");
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const startEdit = (p: Product) => {
     setEditingId(p.id);
