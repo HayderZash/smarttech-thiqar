@@ -1927,6 +1927,83 @@ function AdminPage() {
           </Panel>
         </TabsContent>
 
+        {/* SUPPORT */}
+        <TabsContent value="support" className="space-y-4">
+          <Panel
+            id="support-inbox"
+            title={`رسائل الزبائن${unreadSupport ? ` (${unreadSupport} جديدة)` : ""}`}
+            desc="رسائل الدعم الواردة من حسابات الزبائن"
+          >
+            <div className="space-y-3">
+              {(support.data ?? []).length === 0 && (
+                <p className="py-6 text-center text-sm text-muted-foreground">لا توجد رسائل</p>
+              )}
+              {(support.data ?? []).map((m) => (
+                <div
+                  key={m.id}
+                  className={cn(
+                    "rounded-2xl border p-3",
+                    !m.is_read && "border-primary/40 bg-primary-soft/40",
+                  )}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold">
+                      {m.sender_name}
+                      {m.phone ? ` — ${m.phone}` : ""}
+                    </p>
+                    <span className="text-[11px] text-muted-foreground">
+                      {new Date(m.created_at).toLocaleString("ar-IQ-u-nu-latn")}
+                    </span>
+                  </div>
+                  <p className="mt-2 whitespace-pre-wrap text-sm">{m.message}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {m.phone && (
+                      <a
+                        href={whatsappLink(m.phone, `مرحباً ${m.sender_name}، بخصوص رسالتك للمتجر:`)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-full border px-3 py-1.5 text-xs font-semibold"
+                      >
+                        رد عبر واتساب
+                      </a>
+                    )}
+                    {!m.is_read && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full"
+                        onClick={async () => {
+                          await supabase
+                            .from("support_messages")
+                            .update({ is_read: true })
+                            .eq("id", m.id);
+                          invalidate(["support-messages"]);
+                        }}
+                      >
+                        تعليم كمقروءة
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="rounded-full text-destructive"
+                      onClick={async () => {
+                        await supabase.from("support_messages").delete().eq("id", m.id);
+                        invalidate(["support-messages"]);
+                      }}
+                    >
+                      <Trash2 className="size-4" />
+                      حذف
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Panel>
+        </TabsContent>
+
+
+
         <TabsContent value="settings" className="space-y-4">
           <Panel id="set-store" title="معلومات المتجر" desc="الاسم والشعار والنبذة التعريفية">
             <div className="grid gap-4 sm:grid-cols-2">
