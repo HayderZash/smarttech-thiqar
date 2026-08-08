@@ -35,6 +35,13 @@ async function getPricingTiers(supabase: {
 }
 
 
+/** A coupon is unusable once its expiry moment has passed. */
+function isExpired(expiresAt: string | null | undefined) {
+  if (!expiresAt) return false;
+  const t = new Date(expiresAt).getTime();
+  return Number.isFinite(t) && t <= Date.now();
+}
+
 function computeDiscount(
   coupon: { discount_type: string; discount_value: number } | null,
   subtotal: number,
@@ -55,11 +62,11 @@ export const validateCoupon = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: coupon } = await supabase
       .from("coupons")
-      .select("code, discount_type, discount_value, is_active")
+      .select("code, discount_type, discount_value, is_active, expires_at")
       .eq("code", data.code.toUpperCase())
       .eq("is_active", true)
       .maybeSingle();
-    if (!coupon) return { valid: false as const, discount: 0 };
+    if (!coupon || isExpired(coupon.expires_at)) return { valid: false as const, discount: 0 };
     return { valid: true as const, discount: computeDiscount(coupon, data.subtotal) };
   });
 
@@ -113,11 +120,11 @@ export const placeOrder = createServerFn({ method: "POST" })
     if (data.coupon_code) {
       const { data: coupon } = await supabase
         .from("coupons")
-        .select("code, discount_type, discount_value")
+        .select("code, discount_type, discount_value, expires_at")
         .eq("code", data.coupon_code.toUpperCase())
         .eq("is_active", true)
         .maybeSingle();
-      if (coupon) {
+      if (coupon && !isExpired(coupon.expires_at)) {
         discount = computeDiscount(coupon, subtotal);
         couponCode = coupon.code;
       }

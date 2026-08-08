@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 
+import { DealsTicker } from "@/components/DealsTicker";
 import { NewsCarousel } from "@/components/NewsCarousel";
 import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard";
 import { discountPercent } from "@/lib/format";
@@ -84,6 +85,8 @@ function Home() {
       {banners.data && banners.data.length > 0 && (
         <NewsCarousel items={banners.data as never} />
       )}
+
+      <DealsTicker products={all as never} />
 
       {roots.length > 0 && (
         <Section title={t("shopByCategory")}>
