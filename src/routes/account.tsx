@@ -213,6 +213,9 @@ function AccountPage() {
           {t("save")}
         </Button>
       </div>
+
+      <SupportBox />
+
       <Button
         variant="outline"
         className="w-full rounded-full"
