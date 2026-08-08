@@ -193,6 +193,8 @@ export type SupportMessage = {
   message: string;
   is_read: boolean;
   created_at: string;
+  admin_reply: string;
+  replied_at: string | null;
 };
 
 /** All customer support messages (admin) — RLS limits customers to their own. */
@@ -201,9 +203,12 @@ export const supportMessagesQuery = queryOptions({
   queryFn: async (): Promise<SupportMessage[]> => {
     const { data, error } = await supabase
       .from("support_messages")
-      .select("id, user_id, sender_name, phone, message, is_read, created_at")
+      .select(
+        "id, user_id, sender_name, phone, message, is_read, created_at, admin_reply, replied_at",
+      )
       .order("created_at", { ascending: false })
       .limit(300);
+
     if (error) throw error;
     return (data ?? []) as SupportMessage[];
   },

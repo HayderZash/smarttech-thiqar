@@ -526,29 +526,35 @@ export type Database = {
       }
       support_messages: {
         Row: {
+          admin_reply: string
           created_at: string
           id: string
           is_read: boolean
           message: string
           phone: string
+          replied_at: string | null
           sender_name: string
           user_id: string
         }
         Insert: {
+          admin_reply?: string
           created_at?: string
           id?: string
           is_read?: boolean
           message: string
           phone?: string
+          replied_at?: string | null
           sender_name?: string
           user_id: string
         }
         Update: {
+          admin_reply?: string
           created_at?: string
           id?: string
           is_read?: boolean
           message?: string
           phone?: string
+          replied_at?: string | null
           sender_name?: string
           user_id?: string
         }

@@ -72,9 +72,16 @@ export function SupportBox() {
               <p className="whitespace-pre-wrap">{m.message}</p>
               <p className="mt-1 text-[11px] text-muted-foreground">
                 {new Date(m.created_at).toLocaleString("ar-IQ-u-nu-latn")} ·{" "}
-                {m.is_read ? "تمت القراءة" : "قيد المراجعة"}
+                {m.admin_reply ? "تم الرد" : m.is_read ? "تمت القراءة" : "قيد المراجعة"}
               </p>
+              {m.admin_reply && (
+                <div className="mt-2 rounded-lg border border-primary/40 bg-card p-2">
+                  <p className="text-[11px] font-semibold text-primary">رد الإدارة</p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm">{m.admin_reply}</p>
+                </div>
+              )}
             </li>
+
           ))}
         </ul>
       )}

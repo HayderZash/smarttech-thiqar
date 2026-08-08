@@ -25,6 +25,8 @@ import { toast } from "sonner";
 
 import { NumberField } from "@/components/NumberField";
 import { PricingTiersEditor } from "@/components/PricingTiersEditor";
+import { SupportReply } from "@/components/SupportReply";
+
 import { announceDeal, createCoupon, notifyRestock, updateOrderStatus } from "@/lib/admin.functions";
 import { BulkDeleteProducts } from "@/components/BulkDeleteProducts";
 import { DeleteOrderButton } from "@/components/DeleteOrderButton";
@@ -1957,7 +1959,9 @@ function AdminPage() {
                     </span>
                   </div>
                   <p className="mt-2 whitespace-pre-wrap text-sm">{m.message}</p>
+                  <SupportReply id={m.id} currentReply={m.admin_reply} />
                   <div className="mt-3 flex flex-wrap gap-2">
+
                     {m.phone && (
                       <a
                         href={whatsappLink(m.phone, `مرحباً ${m.sender_name}، بخصوص رسالتك للمتجر:`)}
