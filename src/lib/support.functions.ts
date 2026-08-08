@@ -36,3 +36,39 @@ export const sendSupportMessage = createServerFn({ method: "POST" })
 
     return { ok: true as const };
   });
+
+const replySchema = z.object({
+  id: z.string().uuid(),
+  reply: z.string().trim().min(1).max(2000),
+});
+
+/** Admin replies to a support message inside the app and notifies the customer. */
+export const replySupportMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => replySchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
+      .from("support_messages")
+      .update({ admin_reply: data.reply, replied_at: new Date().toISOString(), is_read: true })
+      .eq("id", data.id)
+      .select("user_id")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("الرسالة غير موجودة");
+
+    await supabaseAdmin.from("notifications").insert({
+      user_id: row.user_id,
+      title: "رد من إدارة المتجر 💬",
+      body: data.reply.slice(0, 300),
+    });
+
+    return { ok: true as const };
+  });
