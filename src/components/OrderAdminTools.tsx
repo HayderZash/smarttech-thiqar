@@ -1,12 +1,19 @@
 import { useServerFn } from "@tanstack/react-start";
-import { Calculator, Printer } from "lucide-react";
-import { useState } from "react";
+import { Calculator, MessageCircle, Printer } from "lucide-react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import storeLogo from "@/assets/smarttech-logo.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { orderProfit } from "@/lib/admin.functions";
-import { formatIQD, statusLabel } from "@/lib/format";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { formatIQD, statusLabel, whatsappLink } from "@/lib/format";
 
 type ProfitLine = {
   id: string;
@@ -31,8 +38,8 @@ type OrderRecord = Record<string, any>;
 
 const money = (n: number) => formatIQD(Number(n) || 0, "ar");
 
-/** Builds and prints an A4 invoice (browser print → save as PDF). */
-function printInvoice(order: OrderRecord, settings: Record<string, string>) {
+/** Builds the A4 invoice HTML (previewed in-app, then printed / saved as PDF). */
+function invoiceHtml(order: OrderRecord, settings: Record<string, string>) {
   const items = (order["order_items"] ?? []).filter((i: OrderRecord) => !i["is_unavailable"]);
   const logo = settings["logo_url"] || storeLogo.url;
   const name = settings["store_name_ar"] || "SmartTech";
@@ -120,16 +127,38 @@ function printInvoice(order: OrderRecord, settings: Record<string, string>) {
   </table>
 
   <footer>شكراً لتسوقك من ${name} — الدفع عند الاستلام. للاستفسار: ${phone}</footer>
-  <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 400); };<\/script>
   </body></html>`;
 
-  const w = window.open("", "_blank", "width=900,height=1200");
-  if (!w) {
-    toast.error("المتصفح منع فتح نافذة الطباعة");
-    return;
-  }
-  w.document.write(html);
-  w.document.close();
+  return html;
+}
+
+/** Short WhatsApp text version of the invoice. */
+function invoiceText(order: OrderRecord, settings: Record<string, string>) {
+  const name = settings["store_name_ar"] || "SmartTech";
+  const items = (order["order_items"] ?? []).filter((i: OrderRecord) => !i["is_unavailable"]);
+  const lines = items
+    .map(
+      (it: OrderRecord, i: number) =>
+        `${i + 1}. ${it["product_name"]} × ${Number(it["quantity"])} = ${money(Number(it["unit_price"]) * Number(it["quantity"]))}`,
+    )
+    .join("\n");
+  return [
+    `🧾 فاتورة ${name}`,
+    `رقم الطلب: #${order["order_number"]}`,
+    `الاسم: ${order["customer_name"] ?? ""}`,
+    `العنوان: ${order["governorate_name"] ?? ""} — ${order["landmark"] ?? ""}`,
+    "",
+    lines,
+    "",
+    `المجموع الفرعي: ${money(Number(order["subtotal"] ?? 0))}`,
+    Number(order["discount_amount"] ?? 0) ? `الخصم: -${money(Number(order["discount_amount"]))}` : "",
+    `أجور التوصيل: ${money(Number(order["shipping_fee"] ?? 0))}`,
+    `الإجمالي: ${money(Number(order["total_amount"] ?? 0))}`,
+    "",
+    "الدفع عند الاستلام. شكراً لتسوقك معنا 🌿",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 export function OrderAdminTools({
@@ -142,6 +171,8 @@ export function OrderAdminTools({
   const calc = useServerFn(orderProfit);
   const [report, setReport] = useState<ProfitReport | null>(null);
   const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState(false);
+  const frameRef = useRef<HTMLIFrameElement | null>(null);
   const showProfit = ["preparing", "shipped", "completed"].includes(String(order["status"]));
 
   return (
@@ -172,11 +203,54 @@ export function OrderAdminTools({
             {report ? "إخفاء الربح" : "احتساب قيمة الربح"}
           </Button>
         )}
-        <Button size="sm" variant="secondary" onClick={() => printInvoice(order, settings)}>
+        <Button size="sm" variant="secondary" onClick={() => setPreview(true)}>
           <Printer className="me-1 size-4" />
-          طباعة فاتورة الطلبية
+          معاينة وطباعة الفاتورة
+        </Button>
+        <Button size="sm" variant="outline" asChild>
+          <a
+            href={whatsappLink(String(order["phone"] ?? ""), invoiceText(order, settings))}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <MessageCircle className="me-1 size-4" />
+            إرسال الفاتورة للواتساب
+          </a>
         </Button>
       </div>
+
+      <Dialog open={preview} onOpenChange={setPreview}>
+        <DialogContent className="flex h-[90vh] max-w-3xl flex-col p-4">
+          <DialogHeader>
+            <DialogTitle>معاينة الفاتورة #{String(order["order_number"])}</DialogTitle>
+          </DialogHeader>
+          <iframe
+            ref={frameRef}
+            title="invoice"
+            className="min-h-0 flex-1 w-full rounded-lg border bg-white"
+            srcDoc={invoiceHtml(order, settings)}
+          />
+          <DialogFooter className="gap-2 sm:justify-start">
+            <Button
+              onClick={() => {
+                const win = frameRef.current?.contentWindow;
+                if (!win) {
+                  toast.error("تعذر فتح الطباعة");
+                  return;
+                }
+                win.focus();
+                win.print();
+              }}
+            >
+              <Printer className="me-1 size-4" />
+              طباعة / حفظ PDF
+            </Button>
+            <Button variant="outline" onClick={() => setPreview(false)}>
+              إغلاق
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {report && (
         <div className="overflow-x-auto rounded-xl border bg-muted/30 p-3">

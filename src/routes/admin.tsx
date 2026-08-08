@@ -27,6 +27,7 @@ import { PricingTiersEditor } from "@/components/PricingTiersEditor";
 import { announceDeal, createCoupon, updateOrderStatus } from "@/lib/admin.functions";
 import { BulkDeleteProducts } from "@/components/BulkDeleteProducts";
 import { OrderAdminTools } from "@/components/OrderAdminTools";
+import { ProfitsExcel } from "@/components/ProfitsExcel";
 import { CategoriesExcel } from "@/components/CategoriesExcel";
 import { ProductsExcel } from "@/components/ProductsExcel";
 import { Button } from "@/components/ui/button";
@@ -384,6 +385,9 @@ function AdminPage() {
 
   const invalidate = (keys: string[]) =>
     keys.forEach((k) => void qc.invalidateQueries({ queryKey: [k] }));
+
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
 
   const [pform, setPform] = useState({ ...emptyProduct });
   const [cform, setCform] = useState({
@@ -805,13 +809,37 @@ function AdminPage() {
             })}
           </div>
 
+          <ProfitsExcel
+            orders={visibleOrders}
+            selected={selectedOrders}
+            selectionMode={selectionMode}
+            onToggleMode={(v) => {
+              setSelectionMode(v);
+              if (!v) setSelectedOrders([]);
+            }}
+          />
+
           {visibleOrders.length === 0 && (
             <p className="py-10 text-center text-sm text-muted-foreground">لا توجد طلبات</p>
           )}
           {visibleOrders.map((o) => (
             <div key={o["id"]} className="space-y-3 rounded-2xl border bg-card p-4">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                <h3 className="truncate text-sm font-bold">
+                <h3 className="flex items-center gap-2 truncate text-sm font-bold">
+                  {selectionMode && (
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-[hsl(var(--primary))]"
+                      checked={selectedOrders.includes(String(o["id"]))}
+                      onChange={(e) =>
+                        setSelectedOrders((prev) =>
+                          e.target.checked
+                            ? [...prev, String(o["id"])]
+                            : prev.filter((id) => id !== String(o["id"])),
+                        )
+                      }
+                    />
+                  )}
                   #{o["order_number"]} — {o["customer_name"]}
                 </h3>
 

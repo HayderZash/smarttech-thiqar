@@ -209,3 +209,75 @@ export const orderProfit = createServerFn({ method: "POST" })
       percent: totalBase > 0 ? Math.round((totalProfit / totalBase) * 1000) / 10 : 0,
     };
   });
+
+/** Admin-only profit report for many orders at once (for the Excel export). */
+export const ordersProfit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ order_ids: z.array(z.string().uuid()).min(1).max(2000) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: orders, error: oErr } = await supabaseAdmin
+      .from("orders")
+      .select("id, order_number, customer_name, phone, status, created_at, total_amount")
+      .in("id", data.order_ids);
+    if (oErr) throw new Error(oErr.message);
+
+    const { data: items, error } = await supabaseAdmin
+      .from("order_items")
+      .select("id, order_id, product_id, product_name, quantity, unit_price, is_unavailable")
+      .in("order_id", data.order_ids);
+    if (error) throw new Error(error.message);
+
+    const ids = (items ?? []).map((i) => i.product_id).filter(Boolean) as string[];
+    const { data: products } = ids.length
+      ? await supabaseAdmin.from("products").select("id, price, discount_price").in("id", ids)
+      : { data: [] as { id: string; price: number; discount_price: number | null }[] };
+    const baseOf = new Map(
+      ((products ?? []) as { id: string; price: number; discount_price: number | null }[]).map(
+        (p) => {
+          const dp = p.discount_price == null ? 0 : Number(p.discount_price);
+          const price = Number(p.price) || 0;
+          return [p.id, dp > 0 && dp < price ? dp : price] as const;
+        },
+      ),
+    );
+
+    return ((orders ?? []) as Record<string, any>[]).map((o) => {
+      const lines = (items ?? [])
+        .filter((i) => i.order_id === o["id"] && !i.is_unavailable)
+        .map((i) => {
+          const qty = Number(i.quantity) || 0;
+          const sell = Number(i.unit_price) || 0;
+          const base = baseOf.get(String(i.product_id)) ?? 0;
+          return {
+            name: String(i.product_name),
+            quantity: qty,
+            base_price: base,
+            sell_price: sell,
+            profit_total: (sell - base) * qty,
+            known: base > 0,
+          };
+        });
+      const total_base = lines.reduce((s, l) => s + l.base_price * l.quantity, 0);
+      const total_sell = lines.reduce((s, l) => s + l.sell_price * l.quantity, 0);
+      const total_profit = total_sell - total_base;
+      return {
+        order_id: String(o["id"]),
+        order_number: Number(o["order_number"]),
+        customer_name: String(o["customer_name"] ?? ""),
+        phone: String(o["phone"] ?? ""),
+        status: String(o["status"]),
+        created_at: String(o["created_at"]),
+        total_amount: Number(o["total_amount"] ?? 0),
+        lines,
+        total_base,
+        total_sell,
+        total_profit,
+        percent: total_base > 0 ? Math.round((total_profit / total_base) * 1000) / 10 : 0,
+      };
+    });
+  });
