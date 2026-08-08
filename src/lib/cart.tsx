@@ -5,6 +5,8 @@ export type CartItem = {
   name_ar: string;
   name_en: string;
   price: number;
+  /** Price before the product discount (equals price when there is no discount). */
+  original_price?: number | null;
   image_url: string | null;
   quantity: number;
 };
