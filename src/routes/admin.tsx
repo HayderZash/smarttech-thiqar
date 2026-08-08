@@ -641,6 +641,7 @@ function AdminPage() {
     { value: "coupons", label: "الكوبونات", desc: "أكواد الخصم", icon: Ticket },
     { value: "solar", label: "الطاقة الشمسية", desc: "الألواح والبطاريات والإنفرترات وأسعارها", icon: Sun },
     { value: "reviews", label: "التقييمات", desc: "اعتماد تقييمات الزبائن وطلبات الإشعار", icon: Star },
+    { value: "support", label: "رسائل الدعم", desc: "رسائل الزبائن الواردة إلى الإدارة", icon: MessageSquare },
     { value: "settings", label: "الإعدادات", desc: "معلومات المتجر والتواصل", icon: Settings },
   ];
   const active = sections.find((s) => s.value === tab) ?? sections[0]!;
