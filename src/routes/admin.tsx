@@ -2089,6 +2089,24 @@ function AdminPage() {
             />
           </Panel>
 
+          <Panel
+            id="set-home"
+            title="تشكيلة الواجهة الرئيسية"
+            desc="عدد الساعات التي تتغير بعدها المنتجات المعروضة عشوائياً في الواجهة (5 صفحات × 20 منتج)"
+          >
+            <div className="max-w-xs">
+              <label className="mb-1 block text-xs text-muted-foreground">مدة التغيير (بالساعات)</label>
+              <Input
+                dir="ltr"
+                type="number"
+                min={1}
+                defaultValue={settings.data?.["home_rotate_hours"] ?? "6"}
+                onChange={(e) => setStore((s) => ({ ...s, home_rotate_hours: e.target.value }))}
+              />
+            </div>
+          </Panel>
+
+
 
           <CropSettingsPanel />
 

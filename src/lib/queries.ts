@@ -92,6 +92,15 @@ export const productsQuery = queryOptions({
   },
 });
 
+/** Product ids ordered by how often customers bought them (aggregate only). */
+export const popularProductIdsQuery = queryOptions({
+  queryKey: ["popular_products"],
+  queryFn: async (): Promise<string[]> => {
+    const { data, error } = await supabase.rpc("popular_products", { _limit: 20 });
+    if (error) throw error;
+    return ((data ?? []) as { product_id: string }[]).map((r) => r.product_id);
+  },
+});
 
 
 export const categoriesQuery = queryOptions({

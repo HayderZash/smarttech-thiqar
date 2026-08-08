@@ -1,15 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, RefreshCw } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { DealsTicker } from "@/components/DealsTicker";
 import { NewsCarousel } from "@/components/NewsCarousel";
+import { Pagination } from "@/components/Pagination";
 import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard";
+import { Button } from "@/components/ui/button";
 import { discountPercent } from "@/lib/format";
 import { CategoryIcon } from "@/lib/category-icons";
 import { categoryPathLabel } from "@/lib/category-path";
 import { localized, useLang } from "@/lib/i18n";
-import { bannersQuery, categoriesQuery, productsQuery } from "@/lib/queries";
+import {
+  bannersQuery,
+  categoriesQuery,
+  popularProductIdsQuery,
+  productsQuery,
+  settingsQuery,
+} from "@/lib/queries";
+import { rotationSeed, seededShuffle } from "@/lib/shuffle";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -70,13 +81,35 @@ function Home() {
   const categories = useQuery(categoriesQuery);
   const banners = useQuery(bannersQuery);
 
+  const settings = useQuery(settingsQuery);
+  const popularIds = useQuery(popularProductIdsQuery);
+  const [bump, setBump] = useState(0);
+  const [page, setPage] = useState(1);
+
   const all = products.data ?? [];
-  const latest = all.slice(0, 8);
+  const rotateHours = Number(settings.data?.["home_rotate_hours"] ?? 6) || 6;
+  const PER_PAGE = 20;
+  const PAGES = 5;
+
+  const picks = useMemo(
+    () => seededShuffle(all, rotationSeed(rotateHours) + bump * 7919).slice(0, PER_PAGE * PAGES),
+    [all, rotateHours, bump],
+  );
+  const totalPages = Math.max(1, Math.ceil(picks.length / PER_PAGE));
+  const pageItems = picks.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  const byId = useMemo(() => new Map(all.map((p) => [p.id, p])), [all]);
+  const popular = (popularIds.data ?? [])
+    .map((id) => byId.get(id))
+    .filter((p): p is NonNullable<typeof p> => !!p)
+    .slice(0, 8);
+
   const deals = all.filter((p) => discountPercent(p) > 0).slice(0, 8);
   const lastPieces = all.filter((p) => p.stock_qty > 0 && p.stock_qty <= 2).slice(0, 8);
   const featured = all.filter((p) => p.is_featured).slice(0, 8);
   const roots = (categories.data ?? []).filter((c) => !c.parent_id);
   const catPath = (id: string | null) => categoryPathLabel(lang, categories.data ?? [], id);
+
 
   return (
     <div>
@@ -135,15 +168,40 @@ function Home() {
         </Section>
       )}
 
-      {latest.length > 0 && (
-        <Section title={t("latest")} to={{ to: "/search" }}>
+      {popular.length > 0 && (
+        <Section title="الأكثر طلباً">
           <Grid>
-            {latest.map((p) => (
+            {popular.map((p) => (
               <ProductCard key={p.id} product={p} categoryPath={catPath(p.category_id)} />
             ))}
           </Grid>
         </Section>
       )}
+
+      {picks.length > 0 && (
+        <section className="mt-7">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="text-lg font-bold">تشكيلة مختارة</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setBump((b) => b + 1);
+                setPage(1);
+              }}
+            >
+              <RefreshCw className="size-4" /> تغيير المعروض
+            </Button>
+          </div>
+          <Grid>
+            {pageItems.map((p) => (
+              <ProductCard key={p.id} product={p} categoryPath={catPath(p.category_id)} />
+            ))}
+          </Grid>
+          <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+        </section>
+      )}
+
 
       {deals.length > 0 && (
         <Section title={t("deals")}>

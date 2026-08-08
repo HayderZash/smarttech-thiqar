@@ -584,6 +584,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      popular_products: {
+        Args: { _limit?: number }
+        Returns: {
+          orders_count: number
+          product_id: string
+        }[]
+      }
       track_order: {
         Args: { _order_number: number; _phone: string }
         Returns: {
