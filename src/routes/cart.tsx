@@ -56,6 +56,12 @@ function CartPage() {
   const gov = (governorates ?? []).find((g) => g.id === govId);
   const shipping = Number(gov?.shipping_cost ?? 0);
   const { data: myOrders } = useQuery(myOrdersQuery(user?.id)) as { data: unknown[] | undefined };
+  const itemsSavings = items.reduce(
+    (n, i) => n + Math.max(0, Number(i.original_price ?? i.price) - i.price) * i.quantity,
+    0,
+  );
+  const itemsSavingsPercent =
+    itemsSavings > 0 ? Math.round((itemsSavings / (subtotal + itemsSavings)) * 100) : 0;
   const firstOrderDiscount = user && (myOrders?.length ?? 0) === 0 ? Math.round((subtotal * 5) / 100) : 0;
   const total = Math.max(0, subtotal - discount - firstOrderDiscount) + shipping;
 
