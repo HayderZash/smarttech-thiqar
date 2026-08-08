@@ -574,6 +574,16 @@ function AdminPage() {
           (o) => matchOrder(o) && (statusFilter === "all" || o["status"] === statusFilter),
         );
 
+  const ORDERS_PER_PAGE = 5;
+  const orderTotalPages = Math.max(1, Math.ceil(visibleOrders.length / ORDERS_PER_PAGE));
+  const currentOrderPage = Math.min(orderPage, orderTotalPages);
+  const pagedOrders = visibleOrders.slice(
+    (currentOrderPage - 1) * ORDERS_PER_PAGE,
+    currentOrderPage * ORDERS_PER_PAGE,
+  );
+
+
+
   const visibleProducts =
     scope === "orders"
       ? []
