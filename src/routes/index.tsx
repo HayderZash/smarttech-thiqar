@@ -81,13 +81,35 @@ function Home() {
   const categories = useQuery(categoriesQuery);
   const banners = useQuery(bannersQuery);
 
+  const settings = useQuery(settingsQuery);
+  const popularIds = useQuery(popularProductIdsQuery);
+  const [bump, setBump] = useState(0);
+  const [page, setPage] = useState(1);
+
   const all = products.data ?? [];
-  const latest = all.slice(0, 8);
+  const rotateHours = Number(settings.data?.["home_rotate_hours"] ?? 6) || 6;
+  const PER_PAGE = 20;
+  const PAGES = 5;
+
+  const picks = useMemo(
+    () => seededShuffle(all, rotationSeed(rotateHours) + bump * 7919).slice(0, PER_PAGE * PAGES),
+    [all, rotateHours, bump],
+  );
+  const totalPages = Math.max(1, Math.ceil(picks.length / PER_PAGE));
+  const pageItems = picks.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  const byId = useMemo(() => new Map(all.map((p) => [p.id, p])), [all]);
+  const popular = (popularIds.data ?? [])
+    .map((id) => byId.get(id))
+    .filter((p): p is NonNullable<typeof p> => !!p)
+    .slice(0, 8);
+
   const deals = all.filter((p) => discountPercent(p) > 0).slice(0, 8);
   const lastPieces = all.filter((p) => p.stock_qty > 0 && p.stock_qty <= 2).slice(0, 8);
   const featured = all.filter((p) => p.is_featured).slice(0, 8);
   const roots = (categories.data ?? []).filter((c) => !c.parent_id);
   const catPath = (id: string | null) => categoryPathLabel(lang, categories.data ?? [], id);
+
 
   return (
     <div>
