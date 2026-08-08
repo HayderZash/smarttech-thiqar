@@ -65,6 +65,7 @@ import {
   productsQuery,
   settingsQuery,
   stockAlertsQuery,
+  supportMessagesQuery,
   type Product,
 } from "@/lib/queries";
 
