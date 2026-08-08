@@ -374,6 +374,7 @@ function AdminPage() {
   const governorates = useQuery(governoratesQuery);
   const banners = useQuery(bannersQuery);
   const settings = useQuery(settingsQuery);
+  const support = useQuery(supportMessagesQuery);
   const orders = useQuery({
     queryKey: ["admin-orders"],
     queryFn: async () => {
