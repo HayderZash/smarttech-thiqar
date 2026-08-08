@@ -82,7 +82,7 @@ export function ProductCard({
             </div>
           )}
           {off > 0 && (
-            <span className="absolute top-2 start-2 rounded-full bg-destructive px-2 py-0.5 text-xs font-bold text-destructive-foreground">
+            <span className="absolute top-2 left-2 rounded-full bg-destructive px-2 py-0.5 text-xs font-bold text-destructive-foreground shadow-sm">
               -{off}%
             </span>
           )}
