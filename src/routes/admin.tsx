@@ -821,7 +821,10 @@ function AdminPage() {
                 <button
                   key={tab.key}
                   type="button"
-                  onClick={() => setStatusFilter(tab.key)}
+                  onClick={() => {
+                    setStatusFilter(tab.key);
+                    setOrderPage(1);
+                  }}
                   className={cn(
                     "rounded-full border px-3 py-1.5 text-xs font-semibold transition",
                     statusFilter === tab.key
