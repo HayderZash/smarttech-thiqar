@@ -971,12 +971,28 @@ function AdminPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>سعر الخصم</Label>
+              <Label>نسبة الخصم %</Label>
               <NumberField
                 allowEmpty
-                value={pform.discount_price}
-                onValueChange={(v) => setPform({ ...pform, discount_price: v })}
+                value={
+                  pform.discount_price && pform.price
+                    ? Math.round(
+                        ((pform.price - pform.discount_price) / pform.price) * 100,
+                      )
+                    : null
+                }
+                onValueChange={(v) =>
+                  setPform({
+                    ...pform,
+                    discount_price: discountPriceFromPercent(pform.price, v ?? 0),
+                  })
+                }
               />
+              {pform.discount_price ? (
+                <p className="text-xs text-destructive">
+                  السعر بعد الخصم: {formatIQD(pform.discount_price, "ar")}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label>الكمية</Label>
