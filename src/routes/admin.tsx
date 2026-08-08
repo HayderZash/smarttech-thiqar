@@ -26,6 +26,7 @@ import { NumberField } from "@/components/NumberField";
 import { PricingTiersEditor } from "@/components/PricingTiersEditor";
 import { announceDeal, createCoupon, notifyRestock, updateOrderStatus } from "@/lib/admin.functions";
 import { BulkDeleteProducts } from "@/components/BulkDeleteProducts";
+import { DeleteOrderButton } from "@/components/DeleteOrderButton";
 import { OrderAdminTools } from "@/components/OrderAdminTools";
 import { ProfitsExcel } from "@/components/ProfitsExcel";
 import { CategoriesExcel } from "@/components/CategoriesExcel";
