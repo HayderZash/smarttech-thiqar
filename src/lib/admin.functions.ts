@@ -281,3 +281,47 @@ export const ordersProfit = createServerFn({ method: "POST" })
       };
     });
   });
+
+/** Notifies every customer who asked to be alerted when a product is back in stock. */
+export const notifyRestock = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ product_id: z.string().uuid(), name: z.string().trim().min(1).max(200) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: alerts } = await supabaseAdmin
+      .from("stock_alerts")
+      .select("id, phone")
+      .eq("product_id", data.product_id)
+      .eq("is_notified", false);
+    if (!alerts?.length) return { ok: true as const, sent: 0 };
+
+    const { data: profiles } = await supabaseAdmin.from("profiles").select("id, phone");
+    const tail = (p: string) => p.replace(/\D/g, "").slice(-9);
+    const byTail = new Map<string, string>();
+    for (const p of (profiles ?? []) as { id: string; phone: string }[]) {
+      if (p.phone) byTail.set(tail(p.phone), p.id);
+    }
+
+    const rows: Notif[] = [];
+    for (const a of alerts as { id: string; phone: string }[]) {
+      const uid = byTail.get(tail(a.phone));
+      if (uid) {
+        rows.push({
+          user_id: uid,
+          title: "المنتج صار متوفر ✅",
+          body: `«${data.name}» رجع متوفر بالمخزن — اطلبه الآن قبل نفاد الكمية.`,
+        });
+      }
+    }
+    if (rows.length) await supabaseAdmin.from("notifications").insert(rows);
+    await supabaseAdmin
+      .from("stock_alerts")
+      .update({ is_notified: true })
+      .in("id", (alerts as { id: string }[]).map((a) => a.id));
+
+    return { ok: true as const, sent: rows.length };
+  });

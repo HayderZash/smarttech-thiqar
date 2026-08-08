@@ -24,7 +24,7 @@ import { toast } from "sonner";
 
 import { NumberField } from "@/components/NumberField";
 import { PricingTiersEditor } from "@/components/PricingTiersEditor";
-import { announceDeal, createCoupon, updateOrderStatus } from "@/lib/admin.functions";
+import { announceDeal, createCoupon, notifyRestock, updateOrderStatus } from "@/lib/admin.functions";
 import { BulkDeleteProducts } from "@/components/BulkDeleteProducts";
 import { OrderAdminTools } from "@/components/OrderAdminTools";
 import { ProfitsExcel } from "@/components/ProfitsExcel";
@@ -421,6 +421,7 @@ function AdminPage() {
   const changeStatus = useServerFn(updateOrderStatus);
   const addCoupon = useServerFn(createCoupon);
   const sendDealNotice = useServerFn(announceDeal);
+  const sendRestockNotice = useServerFn(notifyRestock);
   const [tab, setTab] = useState("orders");
   const [q, setQ] = useState("");
   const [scope, setScope] = useState<"all" | "products" | "orders">("all");
@@ -468,6 +469,20 @@ function AdminPage() {
           });
         } catch {
           /* the product is saved even if the announcement fails */
+        }
+      }
+
+      // Customers waiting for this product are told it is available again.
+      if (Number(values.stock_qty) > 0 && data?.id) {
+        try {
+          await sendRestockNotice({
+            data: {
+              product_id: String(data.id),
+              name: values.name_ar || values.name_en || "منتج",
+            },
+          });
+        } catch {
+          /* the product is saved even if the alert fails */
         }
       }
     },
@@ -1175,7 +1190,19 @@ function AdminPage() {
                       .update({ stock_qty: v })
                       .eq("id", p.id);
                     if (error) toast.error(error.message);
-                    else invalidate(["products"]);
+                    else {
+                      invalidate(["products"]);
+                      if (v > 0 && p.stock_qty <= 0) {
+                        try {
+                          const r = (await sendRestockNotice({
+                            data: { product_id: p.id, name: p.name_ar || "منتج" },
+                          })) as { sent: number };
+                          if (r.sent) toast.success(`تم إشعار ${r.sent} زبون بتوفر المنتج`);
+                        } catch {
+                          /* stock is updated even if the alert fails */
+                        }
+                      }
+                    }
                   }}
                 />
                 <Button
