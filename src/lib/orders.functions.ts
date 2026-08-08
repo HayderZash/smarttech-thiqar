@@ -170,7 +170,15 @@ export const placeOrder = createServerFn({ method: "POST" })
 
     const { error: itemsErr } = await supabase
       .from("order_items")
-      .insert(lines.map((l) => ({ ...l, order_id: order.id })));
+      .insert(
+        lines.map((l) => ({
+          order_id: order.id,
+          product_id: l.product_id,
+          product_name: l.product_name,
+          quantity: l.quantity,
+          unit_price: l.unit_price,
+        })),
+      );
     if (itemsErr) throw new Error(itemsErr.message);
 
     // Decrement stock (best effort, admin remains the source of truth).
