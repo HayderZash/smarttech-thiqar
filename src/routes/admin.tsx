@@ -471,6 +471,20 @@ function AdminPage() {
           /* the product is saved even if the announcement fails */
         }
       }
+
+      // Customers waiting for this product are told it is available again.
+      if (Number(values.stock_qty) > 0 && data?.id) {
+        try {
+          await sendRestockNotice({
+            data: {
+              product_id: String(data.id),
+              name: values.name_ar || values.name_en || "منتج",
+            },
+          });
+        } catch {
+          /* the product is saved even if the alert fails */
+        }
+      }
     },
     onSuccess: () => {
       const wasEditing = !!editingId;
