@@ -121,6 +121,7 @@ export function ProductCard({
                 name_ar: product.name_ar,
                 name_en: product.name_en,
                 price,
+                original_price: product.price,
                 image_url: product.image_url,
               },
               1,
