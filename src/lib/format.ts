@@ -104,6 +104,16 @@ export function applyPricing(base: number, tiers: PriceTier[]) {
 }
 
 
+/** Turns a discount percentage into a price, rounded to the nearest 250 IQD. */
+export function discountPriceFromPercent(base: number, percent: number): number | null {
+  const b = Number(base) || 0;
+  const p = Number(percent) || 0;
+  if (b <= 0 || p <= 0) return null;
+  const raw = b * (1 - Math.min(p, 99) / 100);
+  const rounded = Math.round(raw / PRICE_STEP) * PRICE_STEP;
+  return Math.min(b, Math.max(PRICE_STEP, rounded));
+}
+
 export function effectivePrice(p: { price: number; discount_price: number | null }) {
   return p.discount_price != null && p.discount_price > 0 && p.discount_price < p.price
     ? p.discount_price
