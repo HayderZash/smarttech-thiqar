@@ -307,6 +307,26 @@ function CartPage() {
         </div>
 
         <dl className="space-y-1.5 border-t pt-3 text-sm">
+          {itemsSavings > 0 && (
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">
+                {lang === "ar" ? "المجموع قبل الخصم" : "Before discount"}
+              </dt>
+              <dd className="text-muted-foreground line-through">
+                {formatIQD(subtotal + itemsSavings, lang)}
+              </dd>
+            </div>
+          )}
+          {itemsSavings > 0 && (
+            <div className="flex justify-between text-destructive">
+              <dt>
+                {lang === "ar"
+                  ? `خصم المنتجات المخفضة (${itemsSavingsPercent}%)`
+                  : `Product discounts (${itemsSavingsPercent}%)`}
+              </dt>
+              <dd>-{formatIQD(itemsSavings, lang)}</dd>
+            </div>
+          )}
           <div className="flex justify-between">
             <dt className="text-muted-foreground">{t("subtotal")}</dt>
             <dd className="font-medium">{formatIQD(subtotal, lang)}</dd>
