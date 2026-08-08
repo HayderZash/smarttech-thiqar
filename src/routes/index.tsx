@@ -168,15 +168,40 @@ function Home() {
         </Section>
       )}
 
-      {latest.length > 0 && (
-        <Section title={t("latest")} to={{ to: "/search" }}>
+      {popular.length > 0 && (
+        <Section title="الأكثر طلباً">
           <Grid>
-            {latest.map((p) => (
+            {popular.map((p) => (
               <ProductCard key={p.id} product={p} categoryPath={catPath(p.category_id)} />
             ))}
           </Grid>
         </Section>
       )}
+
+      {picks.length > 0 && (
+        <section className="mt-7">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="text-lg font-bold">تشكيلة مختارة</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setBump((b) => b + 1);
+                setPage(1);
+              }}
+            >
+              <RefreshCw className="size-4" /> تغيير المعروض
+            </Button>
+          </div>
+          <Grid>
+            {pageItems.map((p) => (
+              <ProductCard key={p.id} product={p} categoryPath={catPath(p.category_id)} />
+            ))}
+          </Grid>
+          <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+        </section>
+      )}
+
 
       {deals.length > 0 && (
         <Section title={t("deals")}>
