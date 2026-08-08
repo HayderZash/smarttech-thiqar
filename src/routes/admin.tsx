@@ -414,6 +414,7 @@ function AdminPage() {
     code: "",
     discount_type: "fixed",
     discount_value: 0,
+    max_discount: 0,
     expires_at: "",
   });
   const [solarForm, setSolarForm] = useState({ ...emptySolar });
@@ -1603,6 +1604,16 @@ function AdminPage() {
 
             </div>
             <div className="space-y-2 sm:col-span-3">
+              <Label>أقصى قيمة للخصم (د.ع) — اختياري</Label>
+              <NumberField
+                value={couponForm.max_discount}
+                onValueChange={(v) => setCouponForm({ ...couponForm, max_discount: v ?? 0 })}
+              />
+              <p className="text-xs text-muted-foreground">
+                اتركه 0 لعدم وضع حد أعلى. عند تحديده لن يتجاوز الخصم هذا المبلغ.
+              </p>
+            </div>
+            <div className="space-y-2 sm:col-span-3">
               <Label>تاريخ وساعة الانتهاء (اختياري)</Label>
               <Input
                 type="datetime-local"
@@ -1624,10 +1635,17 @@ function AdminPage() {
                       code: couponForm.code,
                       discount_type: couponForm.discount_type as "fixed" | "percent",
                       discount_value: Number(couponForm.discount_value) || 0,
+                      max_discount: Number(couponForm.max_discount) || 0,
                       expires_at: couponForm.expires_at || null,
                     },
                   });
-                  setCouponForm({ code: "", discount_type: "fixed", discount_value: 0, expires_at: "" });
+                  setCouponForm({
+                    code: "",
+                    discount_type: "fixed",
+                    discount_value: 0,
+                    max_discount: 0,
+                    expires_at: "",
+                  });
                   toast.success("تمت الإضافة وإرسال إشعار للزبائن");
                 } catch (err) {
                   toast.error(err instanceof Error ? err.message : "خطأ");
