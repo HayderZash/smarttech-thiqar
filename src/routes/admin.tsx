@@ -899,6 +899,8 @@ function AdminPage() {
                   </a>
                 </Button>
               </div>
+              <OrderAdminTools order={o} settings={(settings.data ?? {}) as Record<string, string>} />
+
               <Textarea
                 defaultValue={o["notes"]}
                 placeholder="ملاحظة تظهر للزبون"
