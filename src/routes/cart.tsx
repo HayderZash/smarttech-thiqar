@@ -167,7 +167,33 @@ function CartPage() {
               <p className="line-clamp-2 text-sm font-semibold">
                 {localized(lang, i.name_ar, i.name_en)}
               </p>
-              <p className="text-sm font-bold text-primary">{formatIQD(i.price * i.quantity, lang)}</p>
+              {(() => {
+                const orig = Number(i.original_price ?? i.price);
+                const off = orig > i.price ? Math.round(((orig - i.price) / orig) * 100) : 0;
+                return (
+                  <div className="flex flex-wrap items-baseline gap-2">
+                    <p
+                      className={
+                        off > 0
+                          ? "text-sm font-bold text-destructive"
+                          : "text-sm font-bold text-primary"
+                      }
+                    >
+                      {formatIQD(i.price * i.quantity, lang)}
+                    </p>
+                    {off > 0 && (
+                      <>
+                        <span className="text-xs text-muted-foreground line-through">
+                          {formatIQD(orig * i.quantity, lang)}
+                        </span>
+                        <span className="rounded-full bg-destructive px-2 py-0.5 text-[11px] font-bold text-destructive-foreground">
+                          -{off}%
+                        </span>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="mt-auto flex items-center gap-2">
                 <div className="flex items-center gap-1 rounded-full border p-0.5">
                   <Button
