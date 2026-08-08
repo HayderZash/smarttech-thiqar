@@ -48,7 +48,7 @@ import { CropSettingsPanel } from "@/components/CropSettingsPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { CATEGORY_ICON_KEYS, CategoryIcon } from "@/lib/category-icons";
 import { useAuth } from "@/lib/auth";
-import { ORDER_STATUSES, formatIQD, statusGroupLabel, statusLabel, toLatinDigits, whatsappLink } from "@/lib/format";
+import { ORDER_STATUSES, discountPriceFromPercent, formatIQD, statusGroupLabel, statusLabel, toLatinDigits, whatsappLink } from "@/lib/format";
 import { localized, useLang } from "@/lib/i18n";
 import { setItemUnavailable } from "@/lib/orders.functions";
 import { cn } from "@/lib/utils";
