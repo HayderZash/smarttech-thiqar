@@ -82,7 +82,7 @@ export function ProductCard({
             </div>
           )}
           {off > 0 && (
-            <span className="absolute top-2 start-2 rounded-full bg-destructive px-2 py-0.5 text-xs font-bold text-destructive-foreground">
+            <span className="absolute top-2 left-2 rounded-full bg-destructive px-2 py-0.5 text-xs font-bold text-destructive-foreground shadow-sm">
               -{off}%
             </span>
           )}
@@ -96,7 +96,9 @@ export function ProductCard({
             <span className="line-clamp-1 text-[11px] text-muted-foreground">{categoryPath}</span>
           )}
           <div className="mt-auto flex flex-wrap items-baseline gap-2">
-            <span className="text-base font-bold text-primary">{formatIQD(price, lang)}</span>
+            <span className={cn("text-base font-bold", off > 0 ? "text-destructive" : "text-primary")}>
+              {formatIQD(price, lang)}
+            </span>
             {off > 0 && (
               <span className="text-xs text-muted-foreground line-through">
                 {formatIQD(product.price, lang)}
