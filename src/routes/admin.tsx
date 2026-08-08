@@ -851,7 +851,7 @@ function AdminPage() {
           {visibleOrders.length === 0 && (
             <p className="py-10 text-center text-sm text-muted-foreground">لا توجد طلبات</p>
           )}
-          {visibleOrders.map((o) => (
+          {pagedOrders.map((o) => (
             <div key={o["id"]} className="space-y-3 rounded-2xl border bg-card p-4">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                 <h3 className="flex items-center gap-2 truncate text-sm font-bold">
