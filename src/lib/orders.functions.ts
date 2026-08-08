@@ -206,6 +206,17 @@ export const placeOrder = createServerFn({ method: "POST" })
       total,
     });
 
+    try {
+      const { notifyAdmins } = await import("@/lib/notify.server");
+      await notifyAdmins(
+        "طلب جديد 🛒",
+        `طلب جديد رقم #${order.order_number} من ${data.full_name} (${data.phone}) — ${gov?.name_ar ?? ""} · المجموع ${Math.round(total).toLocaleString("en-US")} د.ع`,
+        String(order.id),
+      );
+    } catch (err) {
+      console.error("Admin order notification failed", err);
+    }
+
     return { id: order.id, order_number: order.order_number };
   });
 

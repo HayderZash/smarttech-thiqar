@@ -176,6 +176,32 @@ export function notificationsQuery(userId: string | undefined) {
   });
 }
 
+export type SupportMessage = {
+  id: string;
+  user_id: string;
+  sender_name: string;
+  phone: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+};
+
+/** All customer support messages (admin) — RLS limits customers to their own. */
+export const supportMessagesQuery = queryOptions({
+  queryKey: ["support-messages"],
+  queryFn: async (): Promise<SupportMessage[]> => {
+    const { data, error } = await supabase
+      .from("support_messages")
+      .select("id, user_id, sender_name, phone, message, is_read, created_at")
+      .order("created_at", { ascending: false })
+      .limit(300);
+    if (error) throw error;
+    return (data ?? []) as SupportMessage[];
+  },
+});
+
+
+
 
 export function reviewsQuery(productId: string) {
   return queryOptions({
