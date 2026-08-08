@@ -375,6 +375,7 @@ function AdminPage() {
   const banners = useQuery(bannersQuery);
   const settings = useQuery(settingsQuery);
   const support = useQuery(supportMessagesQuery);
+  const unreadSupport = (support.data ?? []).filter((m) => !m.is_read).length;
   const orders = useQuery({
     queryKey: ["admin-orders"],
     queryFn: async () => {
