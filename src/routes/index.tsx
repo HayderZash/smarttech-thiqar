@@ -127,8 +127,9 @@ function Home() {
             {roots.map((c) => (
               <Link
                 key={c.id}
-                to="/categories"
+                to="/search"
                 search={{ cat: c.id }}
+
                 className="flex w-24 shrink-0 flex-col items-center gap-2"
               >
                 <span className="flex size-20 items-center justify-center overflow-hidden rounded-2xl border bg-sand">
