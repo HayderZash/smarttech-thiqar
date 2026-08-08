@@ -96,7 +96,9 @@ export function ProductCard({
             <span className="line-clamp-1 text-[11px] text-muted-foreground">{categoryPath}</span>
           )}
           <div className="mt-auto flex flex-wrap items-baseline gap-2">
-            <span className="text-base font-bold text-primary">{formatIQD(price, lang)}</span>
+            <span className={cn("text-base font-bold", off > 0 ? "text-destructive" : "text-primary")}>
+              {formatIQD(price, lang)}
+            </span>
             {off > 0 && (
               <span className="text-xs text-muted-foreground line-through">
                 {formatIQD(product.price, lang)}
