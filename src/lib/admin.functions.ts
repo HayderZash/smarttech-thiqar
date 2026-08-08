@@ -151,3 +151,61 @@ export const announceDeal = createServerFn({ method: "POST" })
     );
     return { ok: true as const, sent };
   });
+
+/** Admin-only profit report for one order: base cost vs. sold price per line. */
+export const orderProfit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ order_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as never);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: items, error } = await supabaseAdmin
+      .from("order_items")
+      .select("id, product_id, product_name, quantity, unit_price, is_unavailable")
+      .eq("order_id", data.order_id);
+    if (error) throw new Error(error.message);
+
+    const ids = (items ?? []).map((i) => i.product_id).filter(Boolean) as string[];
+    const { data: products } = ids.length
+      ? await supabaseAdmin.from("products").select("id, price, discount_price").in("id", ids)
+      : { data: [] as { id: string; price: number; discount_price: number | null }[] };
+    const baseOf = new Map(
+      ((products ?? []) as { id: string; price: number; discount_price: number | null }[]).map((p) => {
+        const dp = p.discount_price == null ? 0 : Number(p.discount_price);
+        const price = Number(p.price) || 0;
+        return [p.id, dp > 0 && dp < price ? dp : price] as const;
+      }),
+    );
+
+    const lines = (items ?? [])
+      .filter((i) => !i.is_unavailable)
+      .map((i) => {
+        const qty = Number(i.quantity) || 0;
+        const sell = Number(i.unit_price) || 0;
+        const base = baseOf.get(String(i.product_id)) ?? 0;
+        const profitUnit = sell - base;
+        return {
+          id: String(i.id),
+          name: String(i.product_name),
+          quantity: qty,
+          base_price: base,
+          sell_price: sell,
+          profit_unit: profitUnit,
+          profit_total: profitUnit * qty,
+          percent: base > 0 ? Math.round((profitUnit / base) * 1000) / 10 : 0,
+          known: base > 0,
+        };
+      });
+
+    const totalBase = lines.reduce((s, l) => s + l.base_price * l.quantity, 0);
+    const totalSell = lines.reduce((s, l) => s + l.sell_price * l.quantity, 0);
+    const totalProfit = totalSell - totalBase;
+    return {
+      lines,
+      total_base: totalBase,
+      total_sell: totalSell,
+      total_profit: totalProfit,
+      percent: totalBase > 0 ? Math.round((totalProfit / totalBase) * 1000) / 10 : 0,
+    };
+  });
