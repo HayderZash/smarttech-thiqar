@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import storeLogo from "@/assets/smarttech-logo.png.asset.json";
+import storeLogo from "@/lib/store-logo";
 import { settingsQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 

@@ -3,7 +3,7 @@ import { Calculator, MessageCircle, Printer } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
-import storeLogo from "@/assets/smarttech-logo.png.asset.json";
+import storeLogo from "@/lib/store-logo";
 import { Button } from "@/components/ui/button";
 import { orderProfit } from "@/lib/admin.functions";
 import {
