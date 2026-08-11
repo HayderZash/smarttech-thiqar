@@ -43,7 +43,7 @@ import { useLang } from "@/lib/i18n";
 import { settingsQuery } from "@/lib/queries";
 import { whatsappLink } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import smartTechLogo from "@/assets/smarttech-logo.png.asset.json";
+import smartTechLogo from "@/lib/store-logo";
 
 const NAV = [
   { to: "/", key: "home", icon: Home },
