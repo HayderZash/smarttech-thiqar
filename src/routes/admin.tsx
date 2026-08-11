@@ -2110,6 +2110,36 @@ function AdminPage() {
             </div>
           </Panel>
 
+          <Panel
+            id="set-netlify"
+            title="إشعارات التليكرام عبر Netlify"
+            desc="رابط دالة Netlify والكلمة السرية المشتركة — تُستخدم لإرسال رسالة تليكرام عند كل طلب جديد حتى خارج Lovable"
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs text-muted-foreground">
+                  رابط الدالة (مثال: https://your-site.netlify.app/api/public/telegram/order)
+                </label>
+                <Input
+                  dir="ltr"
+                  defaultValue={settings.data?.["netlify_webhook_url"] ?? ""}
+                  onChange={(e) => setStore((s) => ({ ...s, netlify_webhook_url: e.target.value.trim() }))}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-muted-foreground">
+                  الكلمة السرية (نفسها في متغير ORDER_WEBHOOK_SECRET داخل Netlify)
+                </label>
+                <Input
+                  dir="ltr"
+                  defaultValue={settings.data?.["netlify_webhook_secret"] ?? ""}
+                  onChange={(e) => setStore((s) => ({ ...s, netlify_webhook_secret: e.target.value.trim() }))}
+                />
+              </div>
+            </div>
+          </Panel>
+
+
 
 
           <CropSettingsPanel />
