@@ -1,0 +1,1 @@
+revoke all on function public.notify_order_webhook() from public, anon, authenticated;
