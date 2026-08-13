@@ -198,7 +198,10 @@ function OrdersPage() {
     if (!window.confirm(t("cancelOrderConfirm"))) return;
     setBusyId(id);
     try {
-      await cancel({ data: { order_id: id } });
+      const { data: result, error } = await supabase.rpc("cancel_own_order", { _order_id: id });
+      if (error) throw new Error(error.message);
+      if (result === "CANNOT_CANCEL") throw new Error("CANNOT_CANCEL");
+      if (result !== "OK") throw new Error("NOT_FOUND");
       await queryClient.invalidateQueries({ queryKey: ["orders"] });
       toast.success(t("orderCancelled"));
     } catch (err) {
@@ -208,6 +211,7 @@ function OrdersPage() {
       setBusyId(null);
     }
   };
+
 
 
   if (!loading && !user) {
