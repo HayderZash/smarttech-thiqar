@@ -28,11 +28,8 @@ export const sendSupportMessage = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
 
-    const { notifyAdmins } = await import("@/lib/notify.server");
-    await notifyAdmins(
-      "رسالة دعم جديدة 💬",
-      `${name}${phone ? ` (${phone})` : ""}: ${data.message.slice(0, 160)}`,
-    );
+    // Admin notifications are inserted by a database trigger (host-independent).
+
 
     return { ok: true as const };
   });
