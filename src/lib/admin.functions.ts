@@ -92,15 +92,8 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    const text = STATUS_TEXT[data.status];
-    if (order?.customer_id && text) {
-      await supabaseAdmin.from("notifications").insert({
-        user_id: order.customer_id,
-        order_id: order.id,
-        title: text.title,
-        body: text.body(Number(order.order_number)),
-      });
-    }
+    // The customer notification is inserted by a database trigger on status change.
+
     return { ok: true as const };
   });
 

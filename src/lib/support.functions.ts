@@ -28,11 +28,8 @@ export const sendSupportMessage = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
 
-    const { notifyAdmins } = await import("@/lib/notify.server");
-    await notifyAdmins(
-      "رسالة دعم جديدة 💬",
-      `${name}${phone ? ` (${phone})` : ""}: ${data.message.slice(0, 160)}`,
-    );
+    // Admin notifications are inserted by a database trigger (host-independent).
+
 
     return { ok: true as const };
   });
@@ -64,11 +61,9 @@ export const replySupportMessage = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!row) throw new Error("الرسالة غير موجودة");
 
-    await supabaseAdmin.from("notifications").insert({
-      user_id: row.user_id,
-      title: "رد من إدارة المتجر 💬",
-      body: data.reply.slice(0, 300),
-    });
+    // The customer notification is inserted by a database trigger on admin_reply.
+
+
 
     return { ok: true as const };
   });

@@ -590,6 +590,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      notify_admins: {
+        Args: { _body: string; _order_id?: string; _title: string }
+        Returns: undefined
+      }
       popular_products: {
         Args: { _limit?: number }
         Returns: {
