@@ -467,25 +467,16 @@ export const cancelOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => cancelSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { data: order, error } = await supabase
-      .from("orders")
-      .select("id, status, customer_id")
-      .eq("id", data.order_id)
-      .maybeSingle();
+    const { supabase } = context;
+    const { data: result, error } = await supabase.rpc("cancel_own_order", {
+      _order_id: data.order_id,
+    });
     if (error) throw new Error(error.message);
-    if (!order || order.customer_id !== userId) throw new Error("Order not found");
-    if (order.status !== "review") throw new Error("CANNOT_CANCEL");
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error: updErr } = await supabaseAdmin
-      .from("orders")
-      .update({ status: "cancelled" })
-      .eq("id", order.id)
-      .eq("status", "review");
-    if (updErr) throw new Error(updErr.message);
+    if (result === "CANNOT_CANCEL") throw new Error("CANNOT_CANCEL");
+    if (result !== "OK") throw new Error("Order not found");
     return { ok: true as const };
   });
+
 
 const addItemSchema = z.object({
   order_id: z.string().uuid(),
