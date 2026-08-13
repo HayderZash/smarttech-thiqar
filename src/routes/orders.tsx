@@ -18,7 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { ORDER_STATUSES, formatIQD, statusLabel } from "@/lib/format";
 import { useLang } from "@/lib/i18n";
-import { addOrderItem, cancelOrder, resolveOrderIssue } from "@/lib/orders.functions";
+import { addOrderItem, resolveOrderIssue } from "@/lib/orders.functions";
 import { myOrdersQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
@@ -176,7 +176,6 @@ function OrdersPage() {
   const { user, loading } = useAuth();
   const { data, isLoading } = useQuery(myOrdersQuery(user?.id));
   const queryClient = useQueryClient();
-  const cancel = useServerFn(cancelOrder);
   const resolve = useServerFn(resolveOrderIssue);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -198,7 +197,10 @@ function OrdersPage() {
     if (!window.confirm(t("cancelOrderConfirm"))) return;
     setBusyId(id);
     try {
-      await cancel({ data: { order_id: id } });
+      const { data: result, error } = await supabase.rpc("cancel_own_order", { _order_id: id });
+      if (error) throw new Error(error.message);
+      if (result === "CANNOT_CANCEL") throw new Error("CANNOT_CANCEL");
+      if (result !== "OK") throw new Error("NOT_FOUND");
       await queryClient.invalidateQueries({ queryKey: ["orders"] });
       toast.success(t("orderCancelled"));
     } catch (err) {
@@ -208,6 +210,7 @@ function OrdersPage() {
       setBusyId(null);
     }
   };
+
 
 
   if (!loading && !user) {
