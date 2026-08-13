@@ -61,11 +61,9 @@ export const replySupportMessage = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!row) throw new Error("الرسالة غير موجودة");
 
-    await supabaseAdmin.from("notifications").insert({
-      user_id: row.user_id,
-      title: "رد من إدارة المتجر 💬",
-      body: data.reply.slice(0, 300),
-    });
+    // The customer notification is inserted by a database trigger on admin_reply.
+
+
 
     return { ok: true as const };
   });
