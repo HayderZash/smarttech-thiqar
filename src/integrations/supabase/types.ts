@@ -664,6 +664,10 @@ export type Database = {
           path: string
         }[]
       }
+      resolve_order_issue: {
+        Args: { _action: string; _order_id: string }
+        Returns: string
+      }
       track_order: {
         Args: { _order_number: number; _phone: string }
         Returns: {
