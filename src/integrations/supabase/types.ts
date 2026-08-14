@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       banners: {
         Row: {
           created_at: string
@@ -93,6 +111,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      chat_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          image_path: string | null
+          image_url: string | null
+          is_read: boolean
+          sender: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          image_url?: string | null
+          is_read?: boolean
+          sender?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          image_url?: string | null
+          is_read?: boolean
+          sender?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       coupons: {
         Row: {
@@ -583,6 +634,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_set_item_unavailable: {
+        Args: { _flag: boolean; _item_id: string }
+        Returns: number
+      }
       cancel_own_order: { Args: { _order_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -600,6 +655,12 @@ export type Database = {
         Returns: {
           orders_count: number
           product_id: string
+        }[]
+      }
+      purge_old_chat_images: {
+        Args: never
+        Returns: {
+          path: string
         }[]
       }
       track_order: {
