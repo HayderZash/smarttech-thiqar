@@ -27,7 +27,7 @@ import { NumberField } from "@/components/NumberField";
 import { PricingTiersEditor } from "@/components/PricingTiersEditor";
 import { SupportReply } from "@/components/SupportReply";
 
-import { announceDeal, createCoupon, notifyRestock, updateOrderStatus } from "@/lib/admin.functions";
+import { announceDeal, createCoupon, notifyRestock } from "@/lib/admin.functions";
 import { BulkDeleteProducts } from "@/components/BulkDeleteProducts";
 import { DeleteOrderButton } from "@/components/DeleteOrderButton";
 import { OrderAdminTools } from "@/components/OrderAdminTools";
@@ -56,7 +56,6 @@ import { CATEGORY_ICON_KEYS, CategoryIcon } from "@/lib/category-icons";
 import { useAuth } from "@/lib/auth";
 import { ORDER_STATUSES, discountPriceFromPercent, formatIQD, statusGroupLabel, statusLabel, toLatinDigits, whatsappLink } from "@/lib/format";
 import { localized, useLang } from "@/lib/i18n";
-import { setItemUnavailable } from "@/lib/orders.functions";
 import { cn } from "@/lib/utils";
 import {
   allReviewsQuery,
@@ -900,12 +899,11 @@ function AdminPage() {
                       className="h-7 rounded-full text-xs"
                       onClick={async () => {
                         try {
-                          await markUnavailable({
-                            data: {
-                              order_item_id: String(it["id"]),
-                              is_unavailable: !it["is_unavailable"],
-                            },
+                          const { error } = await supabase.rpc("admin_set_item_unavailable", {
+                            _item_id: String(it["id"]),
+                            _flag: !it["is_unavailable"],
                           });
+                          if (error) throw new Error(error.message);
                           invalidate(["admin-orders", "orders"]);
                           toast.success("تم التحديث وإشعار الزبون");
                         } catch {
@@ -930,9 +928,11 @@ function AdminPage() {
                   value={o["status"]}
                   onValueChange={async (status) => {
                     try {
-                      await changeStatus({
-                        data: { order_id: String(o["id"]), status: status as never },
-                      });
+                      const { error } = await supabase
+                        .from("orders")
+                        .update({ status })
+                        .eq("id", String(o["id"]));
+                      if (error) throw new Error(error.message);
                       invalidate(["admin-orders", "orders", "notifications"]);
                       toast.success("تم التحديث وإرسال إشعار للزبون");
                     } catch (err) {
