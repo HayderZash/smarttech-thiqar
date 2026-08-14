@@ -425,8 +425,6 @@ function AdminPage() {
   });
   const [solarForm, setSolarForm] = useState({ ...emptySolar });
   const [store, setStore] = useState<Record<string, string>>({});
-  const markUnavailable = useServerFn(setItemUnavailable);
-  const changeStatus = useServerFn(updateOrderStatus);
   const addCoupon = useServerFn(createCoupon);
   const sendDealNotice = useServerFn(announceDeal);
   const sendRestockNotice = useServerFn(notifyRestock);
