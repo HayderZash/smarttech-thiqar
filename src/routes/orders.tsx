@@ -18,7 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { ORDER_STATUSES, formatIQD, statusLabel } from "@/lib/format";
 import { useLang } from "@/lib/i18n";
-import { addOrderItem, resolveOrderIssue } from "@/lib/orders.functions";
+import { addOrderItem } from "@/lib/orders.functions";
 import { myOrdersQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
@@ -176,13 +176,18 @@ function OrdersPage() {
   const { user, loading } = useAuth();
   const { data, isLoading } = useQuery(myOrdersQuery(user?.id));
   const queryClient = useQueryClient();
-  const resolve = useServerFn(resolveOrderIssue);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const onResolve = async (id: string, action: "continue" | "change"): Promise<void> => {
     setBusyId(id);
     try {
-      await resolve({ data: { order_id: id, action } });
+      // Runs through a database function so it works on any hosting provider.
+      const { data: result, error } = await supabase.rpc("resolve_order_issue", {
+        _order_id: id,
+        _action: action,
+      });
+      if (error) throw new Error(error.message);
+      if (result !== "OK") throw new Error(String(result));
       await queryClient.invalidateQueries({ queryKey: ["orders"] });
       toast.success(t("actionSaved"));
     } catch {
