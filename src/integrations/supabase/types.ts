@@ -639,6 +639,7 @@ export type Database = {
         Returns: number
       }
       cancel_own_order: { Args: { _order_id: string }; Returns: string }
+      get_ai_config: { Args: { _secret: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
