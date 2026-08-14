@@ -18,7 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { ORDER_STATUSES, formatIQD, statusLabel } from "@/lib/format";
 import { useLang } from "@/lib/i18n";
-import { addOrderItem, resolveOrderIssue } from "@/lib/orders.functions";
+import { addOrderItem } from "@/lib/orders.functions";
 import { myOrdersQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
