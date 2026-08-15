@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppShell } from "@/components/AppShell";
+import { ChatWidget } from "@/components/ChatWidget";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
 import { CartProvider } from "@/lib/cart";
@@ -131,6 +132,7 @@ function RootComponent() {
               {/* Required: nested routes render here. */}
               <Outlet />
             </AppShell>
+            <ChatWidget />
             <Toaster position="top-center" richColors />
             </WishlistProvider>
           </CartProvider>
