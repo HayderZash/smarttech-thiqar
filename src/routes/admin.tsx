@@ -50,6 +50,9 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Pagination } from "@/components/Pagination";
+import { AiSettingsPanel } from "@/components/AiSettingsPanel";
+import { ChatInbox } from "@/components/ChatInbox";
+import { allChatsQuery } from "@/lib/chat-queries";
 import { CropSettingsPanel } from "@/components/CropSettingsPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { CATEGORY_ICON_KEYS, CategoryIcon } from "@/lib/category-icons";
@@ -66,7 +69,6 @@ import {
   productsQuery,
   settingsQuery,
   stockAlertsQuery,
-  supportMessagesQuery,
   type Product,
 } from "@/lib/queries";
 
@@ -375,8 +377,8 @@ function AdminPage() {
   const governorates = useQuery(governoratesQuery);
   const banners = useQuery(bannersQuery);
   const settings = useQuery(settingsQuery);
-  const support = useQuery(supportMessagesQuery);
-  const unreadSupport = (support.data ?? []).filter((m) => !m.is_read).length;
+  const chatInbox = useQuery(allChatsQuery);
+  const unreadSupport = (chatInbox.data ?? []).filter((m) => m.sender === "customer" && !m.is_read).length;
   const orders = useQuery({
     queryKey: ["admin-orders"],
     queryFn: async () => {
@@ -641,7 +643,7 @@ function AdminPage() {
     { value: "coupons", label: "الكوبونات", desc: "أكواد الخصم", icon: Ticket },
     { value: "solar", label: "الطاقة الشمسية", desc: "الألواح والبطاريات والإنفرترات وأسعارها", icon: Sun },
     { value: "reviews", label: "التقييمات", desc: "اعتماد تقييمات الزبائن وطلبات الإشعار", icon: Star },
-    { value: "support", label: "رسائل الدعم", desc: "رسائل الزبائن الواردة إلى الإدارة", icon: MessageSquare },
+    { value: "support", label: "رسائل الزبائن", desc: "محادثات الزبائن المباشرة مع الإدارة", icon: MessageSquare },
     { value: "settings", label: "الإعدادات", desc: "معلومات المتجر والتواصل", icon: Settings },
   ];
   const active = sections.find((s) => s.value === tab) ?? sections[0]!;
@@ -1928,80 +1930,14 @@ function AdminPage() {
           </Panel>
         </TabsContent>
 
-        {/* SUPPORT */}
+        {/* CUSTOMER CHAT */}
         <TabsContent value="support" className="space-y-4">
           <Panel
-            id="support-inbox"
+            id="chat-inbox"
             title={`رسائل الزبائن${unreadSupport ? ` (${unreadSupport} جديدة)` : ""}`}
-            desc="رسائل الدعم الواردة من حسابات الزبائن"
+            desc="محادثات مباشرة مع الزبائن — نصوص وصور، مع زر واتساب"
           >
-            <div className="space-y-3">
-              {(support.data ?? []).length === 0 && (
-                <p className="py-6 text-center text-sm text-muted-foreground">لا توجد رسائل</p>
-              )}
-              {(support.data ?? []).map((m) => (
-                <div
-                  key={m.id}
-                  className={cn(
-                    "rounded-2xl border p-3",
-                    !m.is_read && "border-primary/40 bg-primary-soft/40",
-                  )}
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-semibold">
-                      {m.sender_name}
-                      {m.phone ? ` — ${m.phone}` : ""}
-                    </p>
-                    <span className="text-[11px] text-muted-foreground">
-                      {new Date(m.created_at).toLocaleString("ar-IQ-u-nu-latn")}
-                    </span>
-                  </div>
-                  <p className="mt-2 whitespace-pre-wrap text-sm">{m.message}</p>
-                  <SupportReply id={m.id} currentReply={m.admin_reply} />
-                  <div className="mt-3 flex flex-wrap gap-2">
-
-                    {m.phone && (
-                      <a
-                        href={whatsappLink(m.phone, `مرحباً ${m.sender_name}، بخصوص رسالتك للمتجر:`)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-full border px-3 py-1.5 text-xs font-semibold"
-                      >
-                        رد عبر واتساب
-                      </a>
-                    )}
-                    {!m.is_read && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="rounded-full"
-                        onClick={async () => {
-                          await supabase
-                            .from("support_messages")
-                            .update({ is_read: true })
-                            .eq("id", m.id);
-                          invalidate(["support-messages"]);
-                        }}
-                      >
-                        تعليم كمقروءة
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="rounded-full text-destructive"
-                      onClick={async () => {
-                        await supabase.from("support_messages").delete().eq("id", m.id);
-                        invalidate(["support-messages"]);
-                      }}
-                    >
-                      <Trash2 className="size-4" />
-                      حذف
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ChatInbox />
           </Panel>
         </TabsContent>
 
@@ -2139,6 +2075,8 @@ function AdminPage() {
 
 
 
+
+          <AiSettingsPanel />
 
           <CropSettingsPanel />
 
