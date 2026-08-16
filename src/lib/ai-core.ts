@@ -205,6 +205,51 @@ async function callOpenAiCompatible(
   return json.choices?.[0]?.message?.content ?? "";
 }
 
+type Candidate = { provider: string; model: string; key: string };
+
+const DEFAULT_ORDER = ["gemini", "groq", "openrouter", "siliconflow", "mistral"];
+
+/** Builds the ordered list of provider/model attempts (primary first, then fallbacks). */
+function candidates(config: AiConfig): Candidate[] {
+  const primary = (config["provider"] || "gemini").toLowerCase();
+  const fallbackEnabled = (config["fallback_enabled"] ?? "1") !== "0";
+
+  const custom = (config["model_fallbacks"] ?? "")
+    .split(/[\n,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const [prov, ...rest] = entry.split(":");
+      return { provider: (prov ?? "").trim().toLowerCase(), model: rest.join(":").trim() };
+    })
+    .filter((c) => c.provider);
+
+  const order = [primary, ...(fallbackEnabled ? DEFAULT_ORDER : [])];
+  const specs = [
+    ...custom,
+    ...order.map((provider) => ({ provider, model: "" })),
+  ];
+
+  const out: Candidate[] = [];
+  const seen = new Set<string>();
+  for (const s of specs) {
+    const keyName = s.provider === "gemini" ? "api_key_gemini" : OPENAI_COMPATIBLE[s.provider]?.keyName;
+    if (!keyName) continue;
+    const key = config[keyName];
+    if (!key) continue;
+    const model =
+      s.model ||
+      (s.provider === primary ? config["model"] : "") ||
+      (s.provider === "gemini" ? "gemini-2.5-flash" : (OPENAI_COMPATIBLE[s.provider]?.model ?? ""));
+    const id = `${s.provider}:${model}`;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push({ provider: s.provider, model, key });
+    if (!fallbackEnabled && out.length) break;
+  }
+  return out;
+}
+
 /** Answers a customer question with store context and matching product cards. */
 export async function runAiChat(options: {
   config: AiConfig;
@@ -214,30 +259,41 @@ export async function runAiChat(options: {
   origin: string;
 }): Promise<AiReply> {
   const { config, messages, supabaseUrl, supabaseKey, origin } = options;
-  const provider = (config["provider"] || "gemini").toLowerCase();
   const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
   const products = await searchProducts(supabaseUrl, supabaseKey, lastUser, origin);
   const system = systemPrompt(products, config["system_prompt"] ?? "");
   const turns = messages.slice(-12);
 
+  const list = candidates(config);
+  if (!list.length) throw new Error("لا يوجد مفتاح ذكاء اصطناعي مضبوط في إعدادات الإدارة");
+
   let reply = "";
-  if (provider === "gemini") {
-    const key = config["api_key_gemini"];
-    if (!key) throw new Error("مفتاح Gemini غير مضبوط في إعدادات الإدارة");
-    reply = await callGemini(key, config["model"] || "gemini-2.5-flash", system, turns);
-  } else {
-    const spec = OPENAI_COMPATIBLE[provider];
-    if (!spec) throw new Error("مزود ذكاء اصطناعي غير مدعوم");
-    const key = config[spec.keyName];
-    if (!key) throw new Error("مفتاح المزود غير مضبوط في إعدادات الإدارة");
-    reply = await callOpenAiCompatible(
-      spec.base,
-      key,
-      config["model"] || spec.model,
-      system,
-      turns,
-    );
+  let lastError: unknown = null;
+  for (const c of list) {
+    try {
+      reply =
+        c.provider === "gemini"
+          ? await callGemini(c.key, c.model, system, turns)
+          : await callOpenAiCompatible(
+              OPENAI_COMPATIBLE[c.provider]!.base,
+              c.key,
+              c.model,
+              system,
+              turns,
+            );
+      if (reply.trim()) return { reply: reply.trim(), products };
+    } catch (err) {
+      lastError = err;
+    }
   }
 
-  return { reply: reply.trim() || "لم أتمكن من إيجاد إجابة، جرّب صياغة أخرى.", products };
+  if (lastError) {
+    throw new Error(
+      lastError instanceof Error
+        ? `تعذر الحصول على رد من مزودات الذكاء الاصطناعي: ${lastError.message}`
+        : "تعذر الحصول على رد من مزودات الذكاء الاصطناعي",
+    );
+  }
+  return { reply: "لم أتمكن من إيجاد إجابة، جرّب صياغة أخرى.", products };
 }
+
