@@ -106,6 +106,32 @@ export function AiSettingsPanel() {
           </div>
         ))}
 
+        <div className="space-y-2">
+          <Label>التبديل التلقائي بين المزودات عند الفشل</Label>
+          <select
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+            value={value("fallback_enabled") || "1"}
+            onChange={(e) => set("fallback_enabled", e.target.value)}
+          >
+            <option value="1">مفعّل (يجرّب كل المفاتيح المتوفرة)</option>
+            <option value="0">معطّل (المزوّد المحدد فقط)</option>
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>ترتيب المودلات البديلة (اختياري)</Label>
+          <Textarea
+            dir="ltr"
+            rows={3}
+            value={value("model_fallbacks")}
+            onChange={(e) => set("model_fallbacks", e.target.value)}
+            placeholder={"gemini:gemini-2.5-flash\ngroq:llama-3.3-70b-versatile\nopenrouter:google/gemini-2.5-flash"}
+          />
+          <p className="text-[11px] text-muted-foreground">
+            سطر لكل مودل بصيغة provider:model — عند فشل أو انتهاء صلاحية مودل ينتقل تلقائياً للتالي.
+          </p>
+        </div>
+
         <div className="space-y-2 sm:col-span-2">
           <Label>تعليمات إضافية للمساعد</Label>
           <Textarea
@@ -115,6 +141,7 @@ export function AiSettingsPanel() {
             placeholder="مثال: تحدث بلهجة عراقية بسيطة واقترح دائماً بدائل متوفرة."
           />
         </div>
+
 
         <div className="space-y-2 sm:col-span-2">
           <Label>الكلمة السرية لدالة Netlify (AI_PROXY_SECRET)</Label>
