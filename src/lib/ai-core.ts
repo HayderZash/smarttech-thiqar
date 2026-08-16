@@ -132,7 +132,7 @@ function systemPrompt(products: AiProduct[], extra: string): string {
           (p) =>
             `- ${p.name} | SKU ${p.sku} | ${Math.round(p.price).toLocaleString("en-US")} د.ع | ${
               p.stock_qty > 0 ? "متوفر" : "غير متوفر"
-            } | ${p.url}`,
+            }`,
         )
         .join("\n")
     : "لا توجد نتائج مطابقة في المخزن لهذا السؤال.";
@@ -141,6 +141,7 @@ function systemPrompt(products: AiProduct[], extra: string): string {
     "أنت مساعد مبيعات ذكي لمتجر SmartTech العراقي (إلكترونيات، كهربائيات، طاقة شمسية، مواد إنشائية).",
     "أجب بالعربية بإيجاز ووضوح، واذكر الأسعار بالدينار العراقي.",
     "اعتمد فقط على المنتجات المذكورة أدناه ولا تخترع منتجات أو أسعاراً.",
+    "لا تكتب أي روابط أو عناوين URL إطلاقاً — اذكر اسم المنتج والسعر فقط، فبطاقات المنتجات تُعرض تلقائياً للزبون.",
     "إذا لم تجد المنتج المطلوب اطلب من الزبون توضيح المواصفات (الفولتية، الأمبير، الحجم...).",
     extra.trim(),
     "",
@@ -150,6 +151,7 @@ function systemPrompt(products: AiProduct[], extra: string): string {
     .filter(Boolean)
     .join("\n");
 }
+
 
 async function callGemini(
   key: string,
